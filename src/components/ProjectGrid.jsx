@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { LayoutGrid, List, Search } from 'lucide-react';
+import { LayoutGrid, List, Plus, Search } from 'lucide-react';
 import { ESTADOS } from '../data/seed';
 import { ESTADO_STYLES } from '../lib/status';
 import { cn } from '../lib/cn';
@@ -7,7 +7,7 @@ import ProjectCard from './ProjectCard';
 import ProjectActions from './ProjectActions';
 import EmptyState from './ui/EmptyState';
 
-export default function ProjectGrid({ projects, health, onCheck, onCheckAll, onEdit }) {
+export default function ProjectGrid({ projects, health, onCheck, onCheckAll, onEdit, onNew }) {
   const [query, setQuery] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('Todos');
   const [viewMode, setViewMode] = useState('grid');
@@ -73,6 +73,10 @@ export default function ProjectGrid({ projects, health, onCheck, onCheckAll, onE
             <List size={14} />
           </button>
         </div>
+        <button type="button" className="btn btn-primary" onClick={() => onNew?.()}>
+          <Plus size={15} />
+          Nuevo Proyecto
+        </button>
       </div>
 
       {/* Contenido */}

@@ -46,7 +46,7 @@ export default function DashboardAgenda({ projects, health, onCheck, onCheckAll,
           Hoy ({todayName()})
         </button>
         {DIAS.map((dia, i) => {
-          const corto = dia.slice(0, dia === 'Miércoles' ? 4 : dia === 'Jueves' ? 4 : 2);
+          const corto = { Lunes: 'Lun', Martes: 'Mar', Miércoles: 'Mié', Jueves: 'Jue', Viernes: 'Vie', Sábado: 'Sáb', Domingo: 'Dom' }[dia] || dia.slice(0, 2);
           return (
             <button
               key={dia}

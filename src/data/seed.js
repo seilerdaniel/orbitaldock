@@ -301,5 +301,34 @@ En pausa en la etapa de naming. Dominios candidatos anotados en Notion.`
     ],
     notasTecnicas: `Launcher Android minimalista. Evaluar React Native vs nativo.
 En pausa por carga de clientes.`
+  },
+  {
+    id: 'orbitaldock',
+    nombre: 'OrbitalDock',
+    tipo: 'Desktop',
+    categoria: 'Experimento/Utility',
+    etapa: 'v0.1.0 Released',
+    estado: 'Producción',
+    testStatus: { total: 1, passed: 1, failed: 0, lastRun: '2026-08-17', label: 'Build OK' },
+    diasAsignados: ['Domingo'],
+    rutaLocal: 'C:\\Users\\54113\\Downloads\\orbitaldock',
+    links: {
+      vercel: '',
+      github: 'https://github.com/seilerdaniel/orbitaldock',
+      admin: '',
+      figma: ''
+    },
+    costosMensuales: [],
+    tareasPorTanda: [
+      {
+        tanda: 'v0.2.0 - Features & Packaging',
+        tareas: [
+          { texto: 'Configurar empaquetado portable / ejecutable de Windows (.exe)', completado: false },
+          { texto: 'Implementar notificaciones nativas de escritorio para Health Checks (status >= 400)', completado: false },
+          { texto: 'Añadir widget de Temporizador Pomodoro (25/5 min) en la barra superior', completado: false }
+        ]
+      }
+    ],
+    notasTecnicas: 'Stack: Electron 33 + React 18 + Vite 5 + Tailwind CSS 3. Context Isolation habilitado.'
   }
 ];

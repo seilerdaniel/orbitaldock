@@ -204,6 +204,7 @@ export default function App() {
               onCheck={checkProject}
               onCheckAll={checkAll}
               onEdit={openEdit}
+              onNew={openNew}
             />
           )}
           {view === 'finanzas' && <FinanceModule projects={projects} />}
