@@ -1,0 +1,42 @@
+{
+  "name": "orbitaldock",
+  "version": "0.1.0",
+  "description": "OrbitalDock — Estación central de control para la gestión de proyectos, tandas, agenda semanal, métricas de tests y monitoreo de infraestructura",
+  "main": "electron/main.js",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"wait-on tcp:127.0.0.1:5173 && electron .\"",
+    "start": "electron .",
+    "build": "vite build && electron-builder",
+    "vite:build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.462.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.5.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.0",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.14",
+    "vite": "^5.4.11",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.seilerdaniel.orbitaldock",
+    "productName": "OrbitalDock",
+    "files": ["dist/**", "electron/**"],
+    "directories": { "output": "release" },
+    "win": { "target": "nsis" },
+    "mac": { "target": "dmg", "category": "public.app-category.developer-tools" },
+    "linux": { "target": "AppImage", "category": "Development" }
+  }
+}
