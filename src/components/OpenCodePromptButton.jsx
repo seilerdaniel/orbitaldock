@@ -18,11 +18,11 @@ export default function OpenCodePromptButton({ project, className }) {
     <button
       type="button"
       onClick={handle}
-      title="Copia un resumen formateado del proyecto para usarlo como prompt en OpenCode"
+      title="Copia el prompt de la tanda actual (estado, tests y tareas pendientes) para OpenCode"
       className={cn('btn btn-ghost px-2.5 py-1.5 text-xs', className)}
     >
       {copied ? <Check size={14} className="text-emerald-400" /> : <Sparkles size={14} className="text-amber-400" />}
-      {copied ? 'Copiado' : 'Prompt OpenCode'}
+      {copied ? 'Copiado' : 'Copiar Prompt de Tanda'}
     </button>
   );
 }

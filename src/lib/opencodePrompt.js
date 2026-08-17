@@ -1,9 +1,14 @@
 // OrbitalDock — Inyector de Prompt para OpenCode
 
-import { testDisplay, pendingTasks } from './status';
+import { testDisplay } from './status';
 import { linkProbe } from './api';
 
 export function buildOpenCodePrompt(project) {
+  const tandas = project.tareasPorTanda || [];
+  const tandaActual =
+    tandas.find((t) => (t.tareas || []).some((x) => !x.completado)) || tandas[tandas.length - 1];
+  const pendientesLista = (tandaActual?.tareas || []).filter((x) => !x.completado);
+
   const lines = [];
   lines.push(`# ${project.nombre}`);
   lines.push('');
@@ -11,7 +16,7 @@ export function buildOpenCodePrompt(project) {
   lines.push(`- Tipo: ${project.tipo}`);
   lines.push(`- Categoría: ${project.categoria}`);
   lines.push(`- Estado: ${project.estado}`);
-  lines.push(`- Fase/Tanda actual: ${project.etapa || '—'}`);
+  lines.push(`- Tanda actual: ${tandaActual?.tanda || project.etapa || '—'}`);
   lines.push(`- Tests: ${testDisplay(project)}${project.testStatus?.lastRun ? ` (última corrida: ${project.testStatus.lastRun})` : ''}`);
   if (project.rutaLocal) lines.push(`- Ruta local: ${project.rutaLocal}`);
 
@@ -25,7 +30,6 @@ export function buildOpenCodePrompt(project) {
     lines.push(...links);
   }
 
-  const tandas = project.tareasPorTanda || [];
   if (tandas.length) {
     lines.push('');
     lines.push('## Tareas por tanda');
@@ -37,12 +41,19 @@ export function buildOpenCodePrompt(project) {
     }
   }
 
-  const pendientes = pendingTasks(project);
   lines.push('');
-  lines.push(`## Pedido`);
+  lines.push('## Siguientes tareas pendientes');
+  if (pendientesLista.length) {
+    for (const task of pendientesLista) lines.push(`- ${task.texto}`);
+  } else {
+    lines.push('- Sin tareas pendientes en la tanda actual');
+  }
+
+  lines.push('');
+  lines.push('## Pedido');
   lines.push(
-    `Trabajá sobre el proyecto "${project.nombre}" (${project.etapa || 'fase actual'}).
-Hay ${pendientes} tareas pendientes. Primero leé la carpeta local (${project.rutaLocal || 'ruta no configurada'}), revisá el estado de tests y proponé el siguiente paso concreto. No toques nada fuera de este proyecto.`
+    `Trabajá sobre el proyecto "${project.nombre}" (${tandaActual?.tanda || project.etapa || 'fase actual'}).
+Hay ${pendientesLista.length} tareas pendientes en la tanda actual. Primero leé la carpeta local (${project.rutaLocal || 'ruta no configurada'}), revisá el estado de tests y proponé el siguiente paso concreto. No toques nada fuera de este proyecto.`
   );
 
   if (project.notasTecnicas) {
