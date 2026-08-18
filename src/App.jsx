@@ -29,8 +29,18 @@ export default function App() {
   useEffect(() => {
     api.loadData().then((res) => {
       let list = SEED_PROYECTOS;
-      if (res.ok && Array.isArray(res.data?.projects) && res.data.projects.length > 0) {
+      const hasSaved = res.ok && Array.isArray(res.data?.projects) && res.data.projects.length > 0;
+      if (hasSaved) {
         list = res.data.projects;
+        // Migración: el config.json de v0.1.0 solo tenía 9 proyectos y no incluía OrbitalDock.
+        // Si falta, se fusiona el registro del seed y se persiste la lista de 10 de inmediato.
+        if (!list.some((p) => p.id === 'orbitaldock')) {
+          const seedOrbital = SEED_PROYECTOS.find((p) => p.id === 'orbitaldock');
+          if (seedOrbital) {
+            list = [...list, structuredClone(seedOrbital)];
+            api.saveData({ projects: list }).catch((err) => console.error('save-data (migración) falló:', err));
+          }
+        }
       }
       loadedRef.current = true;
       setProjects(list);
@@ -86,6 +96,20 @@ export default function App() {
     saveNow();
     setEditing(null);
   };
+
+  // Restablecer a los 10 proyectos originales del seed
+  const handleResetSeed = useCallback(() => {
+    if (
+      !window.confirm(
+        '¿Restablecer todos los proyectos a los datos por defecto (seed)? Se perderán los cambios y proyectos creados.'
+      )
+    ) {
+      return;
+    }
+    const list = structuredClone(SEED_PROYECTOS);
+    setProjects(list);
+    api.saveData({ projects: list });
+  }, []);
 
   // ---------------- Health check ----------------
   const checkProject = useCallback(async (project) => {
@@ -241,6 +265,7 @@ export default function App() {
               onEdit={openEdit}
               onExport={exportBackup}
               onImport={importBackup}
+              onReset={handleResetSeed}
             />
           )}
         </div>
