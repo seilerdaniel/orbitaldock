@@ -1,6 +1,6 @@
 {
   "name": "orbitaldock",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "OrbitalDock — Estación central de control para la gestión de proyectos, tandas, agenda semanal, métricas de tests y monitoreo de infraestructura",
   "main": "electron/main.js",
   "private": true,
@@ -41,7 +41,7 @@
       "signAndEditExecutable": false
     },
     "portable": {
-      "artifactName": "OrbitalDock-v0.2.0-Portable.exe"
+      "artifactName": "OrbitalDock-v0.3.0-Portable.exe"
     },
     "mac": { "target": "dmg", "category": "public.app-category.developer-tools" },
     "linux": { "target": "AppImage", "category": "Development" }

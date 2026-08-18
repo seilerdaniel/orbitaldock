@@ -1,5 +1,5 @@
-import React from 'react';
-import { Loader2, RefreshCw, Target } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { GitBranch, Loader2, RefreshCw, Target } from 'lucide-react';
 import { api, linkProbe } from '../lib/api';
 import { cn } from '../lib/cn';
 import { testDisplay, testColor, taskStats, ESTADO_STYLES } from '../lib/status';
@@ -27,6 +27,25 @@ export default function ProjectCard({ project, health, onCheck, onEdit, showHeal
   const { total, done, pct } = taskStats(project);
   const estadoStyle = ESTADO_STYLES[project.estado] || ESTADO_STYLES['En Desarrollo'];
 
+  // Estado Git en vivo (solo si el proyecto tiene ruta local)
+  const [git, setGit] = useState(null);
+  const refreshGit = () => {
+    if (!project.rutaLocal) return;
+    api.getGitStatus(project.rutaLocal).then(setGit);
+  };
+  useEffect(() => {
+    let alive = true;
+    if (project.rutaLocal) {
+      api.getGitStatus(project.rutaLocal).then((res) => {
+        if (alive) setGit(res);
+      });
+    }
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project.id, project.rutaLocal]);
+
   return (
     <div className="card flex animate-slide-up flex-col gap-4 p-5 transition-colors duration-150 hover:border-slate-600/60">
       {/* Header */}
@@ -51,6 +70,32 @@ export default function ProjectCard({ project, health, onCheck, onEdit, showHeal
             <Target size={11} className="text-slate-500" />
             {project.etapa}
           </span>
+        )}
+        {git?.ok && (
+          <button
+            type="button"
+            onClick={refreshGit}
+            title={`Rama: ${git.branch} · Último commit: ${git.lastCommit} · ${
+              git.clean ? 'Repo limpio' : `${git.pendingChangesCount} cambio(s) sin commitear`
+            } (clic para refrescar)`}
+            className={cn(
+              'inline-flex max-w-full items-center gap-1.5 rounded-md px-2 py-1 font-mono text-[11px] ring-1 ring-inset transition-colors duration-150',
+              git.clean
+                ? 'bg-slate-900/60 text-slate-300 ring-slate-700/40 hover:ring-slate-600'
+                : 'bg-amber-500/10 text-amber-300 ring-amber-500/30 hover:ring-amber-500/50'
+            )}
+          >
+            <GitBranch size={11} className={git.clean ? 'text-slate-500' : 'text-amber-400'} />
+            <span className="truncate">{git.branch}</span>
+            <span
+              className={cn(
+                'h-1.5 w-1.5 shrink-0 rounded-full',
+                git.clean ? 'bg-emerald-500' : 'bg-amber-400'
+              )}
+              aria-hidden
+            />
+            {git.lastCommit && <span className="hidden max-w-[110px] truncate text-slate-500 lg:inline">{git.lastCommit}</span>}
+          </button>
         )}
       </div>
 

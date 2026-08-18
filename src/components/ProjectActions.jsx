@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Code2, ExternalLink, Figma, FolderOpen, Github, Pencil } from 'lucide-react';
+import { Code2, ExternalLink, Figma, FolderOpen, Github, Pencil, Rocket } from 'lucide-react';
 import { api, linkProbe } from '../lib/api';
+import { buildOpenCodePrompt } from '../lib/opencodePrompt';
 import Tooltip from './ui/Tooltip';
 import OpenCodePromptButton from './OpenCodePromptButton';
 
@@ -17,6 +18,13 @@ export default function ProjectActions({ project, onEdit, compact = false }) {
     const res = await fn();
     if (res?.ok) flash(okMsg);
     else flash(res?.error || errMsg);
+  };
+
+  const launchOpenCode = async () => {
+    if (!project.rutaLocal) return;
+    const res = await api.runOpenCodePrompt(project.rutaLocal, buildOpenCodePrompt(project));
+    if (res?.ok) flash(res.detail || 'Lanzando OpenCode…');
+    else flash(res?.error || 'No se pudo lanzar OpenCode');
   };
 
   const btn = compact ? 'btn-icon h-7 w-7 p-1' : 'btn-icon';
@@ -80,6 +88,17 @@ export default function ProjectActions({ project, onEdit, compact = false }) {
           </>
         )}
         <OpenCodePromptButton project={project} className={compact ? 'px-2 py-1' : ''} />
+        <Tooltip content={project.rutaLocal ? 'Lanza OpenCode CLI con el prompt de la tanda en la ruta del proyecto' : 'Configurá una ruta local para lanzar OpenCode'}>
+          <button
+            type="button"
+            onClick={launchOpenCode}
+            disabled={!project.rutaLocal}
+            className={compact ? 'btn btn-ghost px-2 py-1 text-xs' : 'btn btn-ghost px-2.5 py-1.5 text-xs'}
+          >
+            <Rocket size={14} className="text-blue-400" />
+            Lanzar en OpenCode
+          </button>
+        </Tooltip>
         {onEdit && (
           <Tooltip content="Editar proyecto">
             <button type="button" className={btn} onClick={() => onEdit(project)}>

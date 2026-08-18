@@ -36,7 +36,7 @@ function persistCycles(count) {
  * Widget Pomodoro (25 min enfoque / 5 min descanso) para la barra superior.
  * Al llegar a 00:00 dispara una notificación nativa y un beep discreto (Web Audio API).
  */
-export default function PomodoroTimer({ projects = [] }) {
+export default function PomodoroTimer({ projects = [], onPomodoroComplete }) {
   const [mode, setMode] = useState('focus'); // 'focus' | 'break'
   const [secondsLeft, setSecondsLeft] = useState(FOCUS_SECONDS);
   const [running, setRunning] = useState(false);
@@ -100,6 +100,7 @@ export default function PomodoroTimer({ projects = [] }) {
       const next = cycles + 1;
       setCycles(next);
       persistCycles(next);
+      onPomodoroComplete?.(selectedProject?.id, FOCUS_SECONDS / 60);
       api.showNotification({
         title: '🍅 Pomodoro completado',
         body: selectedProject
@@ -118,7 +119,7 @@ export default function PomodoroTimer({ projects = [] }) {
       setMode('focus');
       setSecondsLeft(FOCUS_SECONDS);
     }
-  }, [mode, cycles, selectedProject, playBeep]);
+  }, [mode, cycles, selectedProject, playBeep, onPomodoroComplete]);
 
   // Tick del temporizador
   useEffect(() => {

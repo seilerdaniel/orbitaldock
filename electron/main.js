@@ -2,7 +2,7 @@
 const { app, BrowserWindow, shell, ipcMain, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { exec } = require('child_process');
+const { exec, execFile, spawn } = require('child_process');
 
 // Archivo de persistencia local: <userData>/config.json
 const dataFile = () => path.join(app.getPath('userData'), 'config.json');
@@ -75,6 +75,121 @@ function registerIpcHandlers() {
     } catch (err) {
       return { ok: false, error: err.message };
     }
+  });
+
+  // Estado Git en vivo: branch, último commit y cambios pendientes
+  function runGit(rutaLocal, args) {
+    return new Promise((resolve) => {
+      if (typeof rutaLocal !== 'string' || !rutaLocal.trim()) {
+        resolve({ ok: false, error: 'Ruta local vacía' });
+        return;
+      }
+      if (!fs.existsSync(rutaLocal)) {
+        resolve({ ok: false, error: 'La ruta no existe en el disco' });
+        return;
+      }
+      execFile(
+        'git',
+        ['-C', rutaLocal, ...args],
+        { windowsHide: true, timeout: 10000, encoding: 'utf8' },
+        (err, _stdout, stderr) => {
+          if (err) resolve({ ok: false, error: (stderr || err.message).trim() });
+          else resolve({ ok: true, stdout: String(_stdout || '').trim() });
+        }
+      );
+    });
+  }
+
+  ipcMain.handle('get-git-status', async (_event, rutaLocal) => {
+    const [branchRes, logRes, statusRes] = await Promise.all([
+      runGit(rutaLocal, ['rev-parse', '--abbrev-ref', 'HEAD']),
+      runGit(rutaLocal, ['log', '-1', '--oneline']),
+      runGit(rutaLocal, ['status', '--porcelain'])
+    ]);
+    const isRepo = branchRes.ok && logRes.ok;
+    const pendingChangesCount =
+      statusRes.ok && statusRes.stdout ? statusRes.stdout.split('\n').filter((l) => l.trim()).length : 0;
+    return {
+      ok: isRepo,
+      branch: branchRes.ok ? branchRes.stdout : null,
+      lastCommit: logRes.ok ? logRes.stdout : null,
+      pendingChangesCount,
+      clean: pendingChangesCount === 0,
+      error: isRepo ? null : branchRes.error || logRes.error || 'No es un repositorio Git'
+    };
+  });
+
+  // Lanzador directo de OpenCode CLI (o terminal predeterminada como fallback)
+  ipcMain.handle('run-opencode-prompt', async (_event, payload = {}) => {
+    const rutaLocal = typeof payload?.rutaLocal === 'string' ? payload.rutaLocal.trim() : '';
+    const promptText = typeof payload?.promptText === 'string' ? payload.promptText.trim() : '';
+    if (!rutaLocal) return { ok: false, error: 'Ruta local vacía' };
+    if (!fs.existsSync(rutaLocal)) return { ok: false, error: 'La ruta no existe en el disco' };
+    if (!promptText) return { ok: false, error: 'Prompt vacío' };
+
+    // 1) Invocar opencode directamente con el prompt (resuelve shims .exe/.cmd del PATH)
+    const opencodePath = await new Promise((resolve) => {
+      execFile('where', ['opencode'], { windowsHide: true, encoding: 'utf8' }, (err, stdout) => {
+        if (err) return resolve(null);
+        const line = String(stdout || '').split('\n').map((s) => s.trim()).find(Boolean);
+        resolve(line || null);
+      });
+    });
+
+    if (opencodePath) {
+      const launched = await new Promise((resolve) => {
+        try {
+          const child = spawn(opencodePath, [promptText], {
+            cwd: rutaLocal,
+            detached: true,
+            stdio: 'ignore',
+            windowsHide: false
+          });
+          child.on('error', () => resolve(false));
+          child.on('spawn', () => {
+            child.unref();
+            resolve(true);
+          });
+        } catch {
+          resolve(false);
+        }
+      });
+      if (launched) {
+        return { ok: true, mode: 'opencode', detail: 'OpenCode lanzado con el prompt de la tanda' };
+      }
+    }
+
+    // 2) Fallback: abrir la terminal predeterminada en la ruta del proyecto
+    const tryTerminal = (cmd, args) =>
+      new Promise((resolve) => {
+        try {
+          const child = spawn(cmd, args, { detached: true, stdio: 'ignore', windowsHide: false });
+          child.on('error', () => resolve(false));
+          child.on('spawn', () => {
+            child.unref();
+            resolve(true);
+          });
+        } catch {
+          resolve(false);
+        }
+      });
+
+    const wtOk = await tryTerminal('wt', ['-d', rutaLocal]);
+    if (wtOk) return { ok: true, mode: 'terminal', detail: 'Windows Terminal abierta en la ruta del proyecto' };
+
+    const cmdOk = await tryTerminal(process.env.ComSpec || 'cmd.exe', [
+      '/c',
+      'start',
+      '',
+      'cmd',
+      '/k',
+      'cd',
+      '/d',
+      rutaLocal
+    ]);
+    if (cmdOk) return { ok: true, mode: 'terminal', detail: 'Terminal abierta en la ruta del proyecto' };
+
+    return { ok: false, error: 'No se pudo lanzar OpenCode ni abrir una terminal' };
   });
 
   // Abrir URL en el navegador predeterminado

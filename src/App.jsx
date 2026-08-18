@@ -54,7 +54,7 @@ export default function App() {
     const hoy = todayName();
     const count = projects.filter((p) => (p.diasAsignados || []).includes(hoy)).length;
     api.showNotification({
-      title: '🚀 OrbitalDock v0.2.0',
+      title: '🚀 OrbitalDock v0.3.0',
       body: `Tienes ${count} ${count === 1 ? 'proyecto' : 'proyectos'} programados para hoy`
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -109,6 +109,22 @@ export default function App() {
     const list = structuredClone(SEED_PROYECTOS);
     setProjects(list);
     api.saveData({ projects: list });
+  }, []);
+
+  // Acumular minutos trabajados por proyecto cuando finaliza un Pomodoro
+  const handlePomodoroComplete = useCallback((projectId, minutes) => {
+    if (!projectId || !minutes) return;
+    const today = new Date().toISOString().slice(0, 10);
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.id !== projectId) return p;
+        const prevAnalytics = p.tiempoAnalytics || {};
+        return {
+          ...p,
+          tiempoAnalytics: { ...prevAnalytics, [today]: (prevAnalytics[today] || 0) + minutes }
+        };
+      })
+    );
   }, []);
 
   // ---------------- Health check ----------------
@@ -198,7 +214,7 @@ export default function App() {
   const VIEW_TITLES = {
     agenda: 'Agenda Hoy',
     proyectos: 'Proyectos',
-    finanzas: 'Finanzas & Costos',
+    finanzas: 'Finanzas & Métricas',
     config: 'Configuración'
   };
 
@@ -215,11 +231,11 @@ export default function App() {
               {formatFecha()} · Hoy: {todayName()}
             </span>
             <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-500 ring-1 ring-inset ring-slate-700/50">
-              v0.2.0
+              v0.3.0
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <PomodoroTimer projects={projects} />
+            <PomodoroTimer projects={projects} onPomodoroComplete={handlePomodoroComplete} />
             {downCount > 0 && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-400 ring-1 ring-inset ring-red-500/30">
                 <AlertTriangle size={13} />
