@@ -307,9 +307,9 @@ En pausa por carga de clientes.`
     nombre: 'OrbitalDock',
     tipo: 'Desktop',
     categoria: 'Experimento/Utility',
-    etapa: 'v0.1.0 Released',
+    etapa: 'v0.2.0 Released',
     estado: 'Producción',
-    testStatus: { total: 1, passed: 1, failed: 0, lastRun: '2026-08-17', label: 'Build OK' },
+    testStatus: { total: 1, passed: 1, failed: 0, lastRun: '2026-08-18', label: 'Build OK' },
     diasAsignados: ['Domingo'],
     rutaLocal: 'C:\\Users\\54113\\Downloads\\orbitaldock',
     links: {
@@ -323,9 +323,9 @@ En pausa por carga de clientes.`
       {
         tanda: 'v0.2.0 - Features & Packaging',
         tareas: [
-          { texto: 'Configurar empaquetado portable / ejecutable de Windows (.exe)', completado: false },
-          { texto: 'Implementar notificaciones nativas de escritorio para Health Checks (status >= 400)', completado: false },
-          { texto: 'Añadir widget de Temporizador Pomodoro (25/5 min) en la barra superior', completado: false }
+          { texto: 'Configurar empaquetado portable / ejecutable de Windows (.exe)', completado: true },
+          { texto: 'Implementar notificaciones nativas de escritorio para Health Checks (status >= 400)', completado: true },
+          { texto: 'Añadir widget de Temporizador Pomodoro (25/5 min) en la barra superior', completado: true }
         ]
       }
     ],

@@ -11,6 +11,7 @@ import FinanceModule from './components/FinanceModule';
 import Configuracion from './components/Configuracion';
 import ProjectModal, { blankProject } from './components/ProjectModal';
 import CommandPalette from './components/CommandPalette';
+import PomodoroTimer from './components/PomodoroTimer';
 
 export default function App() {
   const [view, setView] = useState('agenda');
@@ -22,6 +23,7 @@ export default function App() {
   const loadedRef = useRef(false);
   const saveTimer = useRef(null);
   const contentRef = useRef(null);
+  const welcomeFired = useRef(false);
 
   // ---------------- Persistencia ----------------
   useEffect(() => {
@@ -34,6 +36,19 @@ export default function App() {
       setProjects(list);
     });
   }, []);
+
+  // Notificación nativa de bienvenida al iniciar la app (una sola vez por sesión)
+  useEffect(() => {
+    if (!loadedRef.current || welcomeFired.current) return;
+    welcomeFired.current = true;
+    const hoy = todayName();
+    const count = projects.filter((p) => (p.diasAsignados || []).includes(hoy)).length;
+    api.showNotification({
+      title: '🚀 OrbitalDock v0.2.0',
+      body: `Tienes ${count} ${count === 1 ? 'proyecto' : 'proyectos'} programados para hoy`
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projects]);
 
   useEffect(() => {
     if (!loadedRef.current) return;
@@ -81,6 +96,13 @@ export default function App() {
     }
     setHealth((h) => ({ ...h, [project.id]: { checking: true, ok: null } }));
     const res = await api.checkHealth({ url, timeoutMs: 4000 });
+    if (res && !res.ok) {
+      const reason = res.status ? `HTTP ${res.status}` : res.error || 'sin respuesta';
+      api.showNotification({
+        title: '⚠️ Alerta de Caída',
+        body: `${project.nombre} no responde (${reason})`
+      });
+    }
     setHealth((h) => ({
       ...h,
       [project.id]: {
@@ -168,8 +190,12 @@ export default function App() {
             <span className="text-sm text-slate-500">
               {formatFecha()} · Hoy: {todayName()}
             </span>
+            <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-500 ring-1 ring-inset ring-slate-700/50">
+              v0.2.0
+            </span>
           </div>
           <div className="flex items-center gap-3">
+            <PomodoroTimer projects={projects} />
             {downCount > 0 && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-400 ring-1 ring-inset ring-red-500/30">
                 <AlertTriangle size={13} />

@@ -8,6 +8,7 @@ export const api = {
   openVscode: (rutaLocal) => guard(() => window.api.openVscode(rutaLocal)),
   openFolder: (rutaLocal) => guard(() => window.api.openFolder(rutaLocal)),
   checkHealth: (payload) => guard(() => window.api.checkHealth(payload)),
+  showNotification: (payload) => guard(() => window.api.showNotification(payload)),
   saveData: (data) => guard(() => window.api.saveData(data)),
   loadData: () => guard(() => window.api.loadData())
 };

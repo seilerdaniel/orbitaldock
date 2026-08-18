@@ -11,7 +11,7 @@ export default function OpenCodePromptButton({ project, className }) {
     e.stopPropagation();
     const ok = await copyText(buildOpenCodePrompt(project));
     setCopied(ok);
-    setTimeout(() => setCopied(false), 1600);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -19,10 +19,14 @@ export default function OpenCodePromptButton({ project, className }) {
       type="button"
       onClick={handle}
       title="Copia el prompt de la tanda actual (estado, tests y tareas pendientes) para OpenCode"
-      className={cn('btn btn-ghost px-2.5 py-1.5 text-xs', className)}
+      className={cn(
+        'btn btn-ghost px-2.5 py-1.5 text-xs',
+        copied && 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/15',
+        className
+      )}
     >
       {copied ? <Check size={14} className="text-emerald-400" /> : <Sparkles size={14} className="text-amber-400" />}
-      {copied ? 'Copiado' : 'Copiar Prompt de Tanda'}
+      {copied ? '¡Copiado! ✓' : 'Copiar Prompt de Tanda'}
     </button>
   );
 }

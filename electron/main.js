@@ -1,5 +1,5 @@
 // OrbitalDock — Main Process (CommonJS)
-const { app, BrowserWindow, shell, ipcMain } = require('electron');
+const { app, BrowserWindow, shell, ipcMain, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
@@ -51,6 +51,32 @@ function isValidHttpUrl(value) {
 
 // ---------------- IPC HANDLERS ----------------
 function registerIpcHandlers() {
+  // Notificación nativa de escritorio (Windows/macOS/Linux)
+  ipcMain.handle('show-notification', (_event, payload = {}) => {
+    try {
+      const title = String(payload?.title ?? 'OrbitalDock').slice(0, 120);
+      const body = String(payload?.body ?? '').slice(0, 500);
+      if (!Notification.isSupported()) return { ok: false, error: 'Notificaciones no soportadas en este sistema' };
+      const opts = { title, body, silent: false };
+      if (payload?.icon && typeof payload.icon === 'string' && payload.icon.trim()) {
+        opts.icon = payload.icon.trim();
+      }
+      const n = new Notification(opts);
+      n.on('click', () => {
+        const win = BrowserWindow.getAllWindows()[0];
+        if (win) {
+          if (win.isMinimized()) win.restore();
+          win.show();
+          win.focus();
+        }
+      });
+      n.show();
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  });
+
   // Abrir URL en el navegador predeterminado
   ipcMain.handle('open-external', async (_event, url) => {
     try {
@@ -169,7 +195,7 @@ function registerIpcHandlers() {
 // ---------------- LIFECYCLE ----------------
 app.whenReady().then(() => {
   if (process.platform === 'win32') {
-    app.setAppUserModelId('com.seilerdaniel.orbitaldock');
+    app.setAppUserModelId('com.orbitaldock.app');
   }
   registerIpcHandlers();
   createWindow();
