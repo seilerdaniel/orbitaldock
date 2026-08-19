@@ -81,12 +81,17 @@ export default function ProjectCard({ project, health, onCheck, onEdit, showHeal
             className={cn(
               'inline-flex max-w-full items-center gap-1.5 rounded-md px-2 py-1 font-mono text-[11px] ring-1 ring-inset transition-colors duration-150',
               git.clean
-                ? 'bg-slate-900/60 text-slate-300 ring-slate-700/40 hover:ring-slate-600'
+                ? 'bg-emerald-500/10 text-emerald-300 ring-emerald-500/30 hover:ring-emerald-500/50'
                 : 'bg-amber-500/10 text-amber-300 ring-amber-500/30 hover:ring-amber-500/50'
             )}
           >
-            <GitBranch size={11} className={git.clean ? 'text-slate-500' : 'text-amber-400'} />
+            <GitBranch size={11} className={git.clean ? 'text-emerald-400' : 'text-amber-400'} />
             <span className="truncate">{git.branch}</span>
+            {!git.clean && (
+              <span className="shrink-0 rounded-full bg-amber-500/20 px-1.5 font-semibold text-amber-300">
+                +{git.pendingChangesCount}
+              </span>
+            )}
             <span
               className={cn(
                 'h-1.5 w-1.5 shrink-0 rounded-full',
@@ -94,7 +99,9 @@ export default function ProjectCard({ project, health, onCheck, onEdit, showHeal
               )}
               aria-hidden
             />
-            {git.lastCommit && <span className="hidden max-w-[110px] truncate text-slate-500 lg:inline">{git.lastCommit}</span>}
+            {git.lastCommit && (
+              <span className="hidden max-w-[110px] truncate text-slate-400 lg:inline">{git.lastCommit}</span>
+            )}
           </button>
         )}
       </div>

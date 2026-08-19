@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Code2, ExternalLink, Figma, FolderOpen, Github, Pencil, Rocket } from 'lucide-react';
+import { Code2, ExternalLink, Figma, FolderOpen, Github, Pencil } from 'lucide-react';
 import { api, linkProbe } from '../lib/api';
 import { buildOpenCodePrompt } from '../lib/opencodePrompt';
 import Tooltip from './ui/Tooltip';
@@ -93,10 +93,9 @@ export default function ProjectActions({ project, onEdit, compact = false }) {
             type="button"
             onClick={launchOpenCode}
             disabled={!project.rutaLocal}
-            className={compact ? 'btn btn-ghost px-2 py-1 text-xs' : 'btn btn-ghost px-2.5 py-1.5 text-xs'}
+            className={compact ? 'btn btn-primary px-2 py-1 text-xs' : 'btn btn-primary'}
           >
-            <Rocket size={14} className="text-blue-400" />
-            Lanzar en OpenCode
+            🚀 Lanzar en OpenCode
           </button>
         </Tooltip>
         {onEdit && (
