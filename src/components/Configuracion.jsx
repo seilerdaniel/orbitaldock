@@ -57,7 +57,7 @@ export default function Configuracion({ projects, onNew, onEdit, onExport, onImp
             title="Recarga los 10 proyectos originales definidos en el seed y sobreescribe los datos guardados"
           >
             <RotateCcw size={15} />
-            Restablecer a Datos por Defecto (Seed)
+            Restablecer a Datos por Defecto
           </button>
         )}
       </div>
