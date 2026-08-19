@@ -12,6 +12,8 @@ import Configuracion from './components/Configuracion';
 import ProjectModal, { blankProject } from './components/ProjectModal';
 import CommandPalette from './components/CommandPalette';
 import PomodoroTimer from './components/PomodoroTimer';
+import CloudSyncIndicator from './components/CloudSyncIndicator';
+import { syncProjectsWithCloud } from './lib/supabase';
 
 export default function App() {
   const [view, setView] = useState('agenda');
@@ -54,7 +56,7 @@ export default function App() {
     const hoy = todayName();
     const count = projects.filter((p) => (p.diasAsignados || []).includes(hoy)).length;
     api.showNotification({
-      title: '🚀 OrbitalDock v0.3.0',
+      title: '🚀 OrbitalDock v0.4.0',
       body: `Tienes ${count} ${count === 1 ? 'proyecto' : 'proyectos'} programados para hoy`
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -126,6 +128,30 @@ export default function App() {
       })
     );
   }, []);
+
+  // ---------------- Sincronización con la nube (Supabase) ----------------
+  const handleCloudSync = useCallback(async () => {
+    const res = await syncProjectsWithCloud(projects);
+    if (res.ok) {
+      setProjects(res.projects);
+      api.saveData({ projects: res.projects }).catch((err) => console.error('save-data (sync) falló:', err));
+      api.showNotification({
+        title: '☁️ Nube sincronizada',
+        body: `${res.projects.length} proyectos sincronizados con Supabase`
+      });
+    } else if (res.mode === 'local') {
+      api.showNotification({
+        title: '☁️ Modo local activo',
+        body: res.error || 'Supabase no configurado'
+      });
+    } else {
+      api.showNotification({
+        title: '⚠️ Error de sincronización',
+        body: res.error || 'No se pudo sincronizar con la nube'
+      });
+    }
+    return res;
+  }, [projects]);
 
   // ---------------- Health check ----------------
   const checkProject = useCallback(async (project) => {
@@ -231,10 +257,11 @@ export default function App() {
               {formatFecha()} · Hoy: {todayName()}
             </span>
             <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-500 ring-1 ring-inset ring-slate-700/50">
-              v0.3.0
+              v0.4.0
             </span>
           </div>
           <div className="flex items-center gap-3">
+            <CloudSyncIndicator onSync={handleCloudSync} />
             <PomodoroTimer projects={projects} onPomodoroComplete={handlePomodoroComplete} />
             {downCount > 0 && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-400 ring-1 ring-inset ring-red-500/30">

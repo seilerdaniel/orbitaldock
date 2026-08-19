@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
-import { Clock, DollarSign, Wallet } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Clock, DollarSign, RefreshCw, Wallet } from 'lucide-react';
 import { CATEGORIAS } from '../data/seed';
 import { formatMoney } from '../lib/status';
+import { fetchDollarRates, fmtArs } from '../lib/forex';
 import { cn } from '../lib/cn';
 import EmptyState from './ui/EmptyState';
 import Badge from './ui/Badge';
@@ -11,6 +12,19 @@ const fmtTime = (m) => {
   const min = m % 60;
   return h > 0 ? `${h}h ${min}m` : `${min} min`;
 };
+
+/** Caja compacta con compra/venta de una cotización (ej: Oficial, MEP). */
+function RateBox({ label, r }) {
+  if (!r) return <span className="text-xs text-slate-600">{label}: —</span>;
+  return (
+    <div className="rounded-lg bg-slate-900/70 px-3 py-1.5 ring-1 ring-inset ring-slate-700/50">
+      <span className="text-[10px] uppercase tracking-wider text-slate-500">{label}</span>
+      <span className="ml-2 font-mono text-sm font-semibold text-slate-100">
+        {fmtArs(r.compra)} / {fmtArs(r.venta)}
+      </span>
+    </div>
+  );
+}
 
 /** Calcula la semana actual (lunes a domingo) y suma los minutos de tiempoAnalytics por proyecto. */
 function useWeekStats(projects) {
@@ -52,6 +66,30 @@ function useWeekStats(projects) {
 export default function FinanceModule({ projects }) {
   const [tab, setTab] = useState('costos'); // 'costos' | 'tiempo'
   const [catFilter, setCatFilter] = useState('Todas');
+  const [currencyView, setCurrencyView] = useState('USD'); // 'USD' | 'ARS'
+  const [rates, setRates] = useState(null);
+  const [ratesLoading, setRatesLoading] = useState(true);
+
+  // Carga inicial de la cotización USD/ARS
+  useEffect(() => {
+    let alive = true;
+    fetchDollarRates().then((res) => {
+      if (!alive) return;
+      setRates(res);
+      setRatesLoading(false);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const refreshRates = useCallback(() => {
+    setRatesLoading(true);
+    fetchDollarRates().then((res) => {
+      setRates(res);
+      setRatesLoading(false);
+    });
+  }, []);
 
   const items = useMemo(
     () =>
@@ -64,6 +102,12 @@ export default function FinanceModule({ projects }) {
   const usdTotal = items.filter((i) => i.moneda === 'USD').reduce((s, i) => s + i.monto, 0);
   const arsTotal = items.filter((i) => i.moneda === 'ARS').reduce((s, i) => s + i.monto, 0);
   const proyectosConCostos = new Set(items.map((i) => i.proyecto)).size;
+
+  // Conversión en vivo: usa el dólar oficial (venta) cuando la cotización está disponible.
+  const rateVenta = rates?.ok ? rates.rates.oficial?.venta : null;
+  const totalUsd = rateVenta ? usdTotal + arsTotal / rateVenta : usdTotal;
+  const totalArs = rateVenta ? arsTotal + usdTotal * rateVenta : arsTotal;
+  const displayTotal = currencyView === 'USD' ? totalUsd : totalArs;
 
   const { perProject, perCategory } = useWeekStats(projects);
   const weekTotal = perProject.reduce((s, i) => s + i.minutes, 0);
@@ -81,6 +125,44 @@ export default function FinanceModule({ projects }) {
         <p className="mt-0.5 text-sm text-slate-500">
           Costos operativos mensuales y tiempo de enfoque (Pomodoro) por proyecto.
         </p>
+      </div>
+
+      {/* Widget: cotización USD/ARS en vivo */}
+      <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
+        <div className="flex items-center gap-3">
+          <DollarSign size={18} className="text-emerald-400" />
+          <div>
+            <p className="text-sm font-semibold text-slate-100">Cotización USD/ARS en Vivo</p>
+            <p className="text-xs text-slate-500">
+              {rates?.ok
+                ? `Consultado a las ${new Date(rates.fetchedAt).toLocaleTimeString()} · Actualizada: ${new Date(rates.updatedAt).toLocaleTimeString()}`
+                : 'Fuente: dolarapi.com'}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {rates?.ok ? (
+            <>
+              <RateBox label="Oficial" r={rates.rates.oficial} />
+              <RateBox label="MEP" r={rates.rates.mep} />
+            </>
+          ) : rates?.ok === false ? (
+            <span className="text-xs text-red-400">Sin cotización: {rates.error}</span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+              <Clock size={13} className="animate-pulse" /> Consultando…
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={refreshRates}
+            disabled={ratesLoading}
+            className="btn-icon h-8 w-8 p-1"
+            title="Actualizar cotización"
+          >
+            <RefreshCw size={14} className={cn(ratesLoading && 'animate-spin')} />
+          </button>
+        </div>
       </div>
 
       {/* Sub-pestañas */}
@@ -117,14 +199,38 @@ export default function FinanceModule({ projects }) {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <div className="card flex flex-col gap-1 p-5">
-              <span className="text-xs uppercase tracking-wider text-slate-500">Costo mensual USD</span>
-              <span className="font-mono text-2xl font-semibold text-emerald-400">{formatMoney(usdTotal, 'USD')}</span>
-            </div>
-            <div className="card flex flex-col gap-1 p-5">
-              <span className="text-xs uppercase tracking-wider text-slate-500">Costo mensual ARS</span>
-              <span className="font-mono text-2xl font-semibold text-amber-400">{formatMoney(arsTotal, 'ARS')}</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs uppercase tracking-wider text-slate-500">Costo mensual total</span>
+                <div
+                  className="flex items-center gap-0.5 rounded-lg bg-slate-900/70 p-0.5 ring-1 ring-inset ring-slate-700/50"
+                  role="group"
+                  aria-label="Moneda de visualización"
+                >
+                  {['USD', 'ARS'].map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setCurrencyView(c)}
+                      className={cn(
+                        'rounded-md px-2 py-0.5 text-[11px] font-semibold transition-colors duration-150',
+                        currencyView === c ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                      )}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <span className="font-mono text-2xl font-semibold text-emerald-400">
+                {formatMoney(displayTotal, currencyView)}
+              </span>
+              {rateVenta && (
+                <span className="text-[11px] text-slate-500">
+                  Dólar oficial de referencia (venta): ${Math.round(rateVenta).toLocaleString('es-AR')}
+                </span>
+              )}
             </div>
             <div className="card flex flex-col gap-1 p-5">
               <span className="text-xs uppercase tracking-wider text-slate-500">Conceptos registrados</span>
