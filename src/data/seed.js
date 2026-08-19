@@ -321,14 +321,13 @@ En pausa por carga de clientes.`
     costosMensuales: [],
     tareasPorTanda: [
       {
-        tanda: 'v0.2.0 - Features & Packaging',
+        tanda: 'Mantenimiento & Evolución',
         tareas: [
-          { texto: 'Configurar empaquetado portable / ejecutable de Windows (.exe)', completado: true },
-          { texto: 'Implementar notificaciones nativas de escritorio para Health Checks (status >= 400)', completado: true },
-          { texto: 'Añadir widget de Temporizador Pomodoro (25/5 min) en la barra superior', completado: true }
+          { texto: 'Auditar rendimiento de la app de escritorio', completado: false },
+          { texto: 'Sincronizar backups JSON de configuración', completado: false }
         ]
       }
     ],
-    notasTecnicas: 'Stack: Electron 33 + React 18 + Vite 5 + Tailwind CSS 3. Context Isolation habilitado.'
+    notasTecnicas: 'Stack: Electron + React + Vite + Tailwind CSS.'
   }
 ];
