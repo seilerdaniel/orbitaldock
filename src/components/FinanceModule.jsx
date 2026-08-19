@@ -66,7 +66,7 @@ function useWeekStats(projects) {
 export default function FinanceModule({ projects }) {
   const [tab, setTab] = useState('costos'); // 'costos' | 'tiempo'
   const [catFilter, setCatFilter] = useState('Todas');
-  const [currencyView, setCurrencyView] = useState('USD'); // 'USD' | 'ARS'
+  const [convertToArs, setConvertToArs] = useState(false);
   const [rates, setRates] = useState(null);
   const [ratesLoading, setRatesLoading] = useState(true);
 
@@ -103,11 +103,11 @@ export default function FinanceModule({ projects }) {
   const arsTotal = items.filter((i) => i.moneda === 'ARS').reduce((s, i) => s + i.monto, 0);
   const proyectosConCostos = new Set(items.map((i) => i.proyecto)).size;
 
-  // Conversión en vivo: usa el dólar oficial (venta) cuando la cotización está disponible.
+  // Conversión en vivo: con el conmutador activo, los costos expresados en
+  // USD se convierten a ARS al dólar oficial (venta) de la última cotización.
   const rateVenta = rates?.ok ? rates.rates.oficial?.venta : null;
-  const totalUsd = rateVenta ? usdTotal + arsTotal / rateVenta : usdTotal;
-  const totalArs = rateVenta ? arsTotal + usdTotal * rateVenta : arsTotal;
-  const displayTotal = currencyView === 'USD' ? totalUsd : totalArs;
+  const convertedUsdToArs = rateVenta ? usdTotal * rateVenta : null;
+  const arsDisplayTotal = convertToArs && convertedUsdToArs != null ? arsTotal + convertedUsdToArs : arsTotal;
 
   const { perProject, perCategory } = useWeekStats(projects);
   const weekTotal = perProject.reduce((s, i) => s + i.minutes, 0);
@@ -132,7 +132,7 @@ export default function FinanceModule({ projects }) {
         <div className="flex items-center gap-3">
           <DollarSign size={18} className="text-emerald-400" />
           <div>
-            <p className="text-sm font-semibold text-slate-100">Cotización USD/ARS en Vivo</p>
+            <p className="text-sm font-semibold text-slate-100">Cotización Dólar en Vivo</p>
             <p className="text-xs text-slate-500">
               {rates?.ok
                 ? `Consultado a las ${new Date(rates.fetchedAt).toLocaleTimeString()} · Actualizada: ${new Date(rates.updatedAt).toLocaleTimeString()}`
@@ -199,36 +199,43 @@ export default function FinanceModule({ projects }) {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="card flex flex-col gap-1 p-5">
+              <span className="text-xs uppercase tracking-wider text-slate-500">Costo mensual USD</span>
+              <span className="font-mono text-2xl font-semibold text-emerald-400">{formatMoney(usdTotal, 'USD')}</span>
+            </div>
             <div className="card flex flex-col gap-1 p-5">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs uppercase tracking-wider text-slate-500">Costo mensual total</span>
-                <div
-                  className="flex items-center gap-0.5 rounded-lg bg-slate-900/70 p-0.5 ring-1 ring-inset ring-slate-700/50"
-                  role="group"
-                  aria-label="Moneda de visualización"
+                <span className="text-xs uppercase tracking-wider text-slate-500">Costo mensual ARS</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={convertToArs}
+                  disabled={!rateVenta}
+                  onClick={() => setConvertToArs((v) => !v)}
+                  title={
+                    rateVenta
+                      ? 'Convertir todos los costos en USD a ARS según la cotización'
+                      : 'Sin cotización disponible para convertir'
+                  }
+                  className={cn(
+                    'relative h-5 w-9 shrink-0 rounded-full transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/50',
+                    convertToArs ? 'bg-emerald-500' : 'bg-slate-700',
+                    !rateVenta && 'opacity-40'
+                  )}
                 >
-                  {['USD', 'ARS'].map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setCurrencyView(c)}
-                      className={cn(
-                        'rounded-md px-2 py-0.5 text-[11px] font-semibold transition-colors duration-150',
-                        currencyView === c ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
-                      )}
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
+                  <span
+                    className={cn(
+                      'absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-150',
+                      convertToArs && 'translate-x-4'
+                    )}
+                  />
+                </button>
               </div>
-              <span className="font-mono text-2xl font-semibold text-emerald-400">
-                {formatMoney(displayTotal, currencyView)}
-              </span>
-              {rateVenta && (
+              <span className="font-mono text-2xl font-semibold text-amber-400">{formatMoney(arsDisplayTotal, 'ARS')}</span>
+              {convertToArs && rateVenta && (
                 <span className="text-[11px] text-slate-500">
-                  Dólar oficial de referencia (venta): ${Math.round(rateVenta).toLocaleString('es-AR')}
+                  Incluye USD convertidos al dólar oficial ${Math.round(rateVenta).toLocaleString('es-AR')}
                 </span>
               )}
             </div>

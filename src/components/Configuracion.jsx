@@ -1,10 +1,28 @@
-import React, { useRef } from 'react';
-import { Download, Plus, RotateCcw, Upload } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Check, Copy, Download, Plus, RotateCcw, Upload } from 'lucide-react';
+import { copyText } from '../lib/opencodePrompt';
 import EmptyState from './ui/EmptyState';
 
 /** Vista Configuración: gestión de proyectos + copias de seguridad. */
 export default function Configuracion({ projects, onNew, onEdit, onExport, onImport, onReset }) {
   const fileRef = useRef(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyBackup = async () => {
+    const payload = {
+      app: 'orbitaldock',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      projects
+    };
+    const ok = await copyText(JSON.stringify(payload, null, 2));
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } else {
+      alert('No se pudo copiar el backup al portapapeles.');
+    }
+  };
 
   const handleImportFile = (e) => {
     const file = e.target.files?.[0];
@@ -43,6 +61,15 @@ export default function Configuracion({ projects, onNew, onEdit, onExport, onImp
         <button type="button" className="btn btn-ghost" onClick={onExport}>
           <Download size={15} />
           Exportar backup (.json)
+        </button>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={handleCopyBackup}
+          title="Copia el JSON completo de tus proyectos al portapapeles para pegarlo en la app móvil, WhatsApp, Telegram o Notas"
+        >
+          {copied ? <Check size={15} className="text-emerald-400" /> : <Copy size={15} />}
+          {copied ? '¡Backup copiado!' : 'Copiar Backup JSON al Portapapeles'}
         </button>
         <input ref={fileRef} type="file" accept=".json,application/json" className="hidden" onChange={handleImportFile} />
         <button type="button" className="btn btn-ghost" onClick={() => fileRef.current?.click()}>
@@ -100,7 +127,8 @@ export default function Configuracion({ projects, onNew, onEdit, onExport, onImp
       <p className="max-w-xl text-xs leading-relaxed text-slate-600">
         Los datos se guardan automáticamente en <span className="font-mono text-slate-500">config.json</span> dentro
         del directorio de datos de la aplicación (<span className="font-mono text-slate-500">userData</span>). Usá
-        Exportar/Importar para mover tu base entre máquinas.
+        Exportar/Importar para mover tu base entre máquinas, o "Copiar Backup JSON" para enviarla rápido a la app
+        móvil por WhatsApp, Telegram o Notas.
       </p>
     </div>
   );

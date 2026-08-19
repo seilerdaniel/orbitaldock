@@ -1,7 +1,11 @@
 // OrbitalDock — Servicio de cotización de divisas (USD/ARS) en vivo.
-// Fuente pública: https://dolarapi.com (sin API key, habilita CORS).
+// Fuente pública y gratuita: https://dolarapi.com (sin API key, habilita CORS).
+//
+// Nota: la API v1 no expone "/mep". El dólar MEP se llama casa "bolsa",
+// por lo que se consulta ese endpoint para la cotización MEP.
 
-const API_BASE = 'https://dolarapi.com/v1/dolares';
+const OFFICIAL_URL = 'https://dolarapi.com/v1/dolares/oficial';
+const MEP_URL = 'https://dolarapi.com/v1/dolares/bolsa';
 
 async function fetchJson(url, timeoutMs = 8000) {
   const controller = new AbortController();
@@ -16,33 +20,34 @@ async function fetchJson(url, timeoutMs = 8000) {
 }
 
 /**
- * Consulta la cotización del dólar en la API pública de dolarapi.com.
- * Devuelve compra/venta del dólar oficial y del MEP (casa "bolsa"), junto con
- * la fecha de actualización del proveedor y la hora local de la consulta.
+ * Consulta la cotización del dólar (Oficial y MEP) en dolarapi.com.
+ * Devuelve compra/venta de cada tipo, la fecha de actualización del
+ * proveedor y la hora local de la consulta.
  */
 export async function fetchDollarRates() {
-  try {
-    const list = await fetchJson(API_BASE);
-    const pick = (casa) => list.find((d) => d.casa === casa) || null;
-    const oficial = pick('oficial');
-    const mep = pick('bolsa'); // En dolarapi v1 el MEP es la casa "bolsa"
-    if (!oficial) throw new Error('No se encontró la cotización oficial');
-    return {
-      ok: true,
-      source: 'dolarapi.com',
-      rates: {
-        oficial: oficial ? { compra: oficial.compra, venta: oficial.venta } : null,
-        mep: mep ? { compra: mep.compra, venta: mep.venta } : null
-      },
-      updatedAt: oficial.fechaActualizacion || null,
-      fetchedAt: new Date().toISOString()
-    };
-  } catch (err) {
+  const [oficialRes, mepRes] = await Promise.allSettled([fetchJson(OFFICIAL_URL), fetchJson(MEP_URL)]);
+  const oficial = oficialRes.status === 'fulfilled' ? oficialRes.value : null;
+  const mep = mepRes.status === 'fulfilled' ? mepRes.value : null;
+
+  if (!oficial) {
+    const reason = oficialRes.reason;
     return {
       ok: false,
-      error: err?.name === 'AbortError' ? 'Timeout consultando la cotización' : err.message || 'Error desconocido'
+      error:
+        reason?.name === 'AbortError' ? 'Timeout consultando la cotización' : reason?.message || 'Error consultando la cotización'
     };
   }
+
+  return {
+    ok: true,
+    source: 'dolarapi.com',
+    rates: {
+      oficial: { compra: oficial.compra, venta: oficial.venta },
+      mep: mep ? { compra: mep.compra, venta: mep.venta } : null
+    },
+    updatedAt: oficial.fechaActualizacion || null,
+    fetchedAt: new Date().toISOString()
+  };
 }
 
 /** Formatea un monto ARS simple sin decimales (ej: $1.515). */
