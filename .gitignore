@@ -8,3 +8,5 @@ release/
 *.exe
 *.dmg
 .DS_Store
+
+.atl/
