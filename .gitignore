@@ -1,0 +1,12 @@
+node_modules/
+dist/
+out/
+release/
+.env
+.env.local
+*.log
+*.exe
+*.dmg
+.DS_Store
+
+.atl/
