@@ -161,7 +161,7 @@ export default function ProjectCard({ project, health, onCheck, onEdit, showHeal
       )}
 
       {/* Acciones */}
-      <div className="flex flex-wrap gap-2 border-t border-slate-700/50 pt-3">
+      <div className="flex items-center justify-between gap-2 border-t border-slate-700/50 pt-3">
         <ProjectActions project={project} onEdit={onEdit} />
       </div>
 

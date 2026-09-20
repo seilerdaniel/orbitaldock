@@ -29,7 +29,7 @@ export default function ProjectGrid({ projects, health, onCheck, onCheckAll, onE
   }, [projects]);
 
   return (
-    <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-180px)] overflow-x-hidden pb-16">
+    <div className="space-y-6">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-0 flex-1">
