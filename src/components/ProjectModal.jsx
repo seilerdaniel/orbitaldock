@@ -67,9 +67,8 @@ export default function ProjectModal({ project, isNew, projectsCount, onClose, o
 
   const handleSave = () => {
     if (!draft.nombre.trim()) return;
-    const t = draft.testStatus;
-    const label = t.total > 0 ? `${t.passed}/${t.total} pass` : t.label;
-    onSave({ ...draft, nombre: draft.nombre.trim(), testStatus: { ...t, label } });
+    // `testStatus.label` lo deriva normalizeProject: acá solo se guarda lo declarado.
+    onSave({ ...draft, nombre: draft.nombre.trim() });
   };
 
   const handleImportFile = (e) => {
@@ -162,19 +161,25 @@ export default function ProjectModal({ project, isNew, projectsCount, onClose, o
               <Field label="Ruta local">
                 <input className="input font-mono text-xs" value={draft.rutaLocal} onChange={(e) => set({ rutaLocal: e.target.value })} placeholder="C:\Users\...\Proyecto" />
               </Field>
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Tests totales">
-                  <input type="number" min={0} className="input font-mono" value={draft.testStatus.total || ''} onChange={(e) => updateTest('total', Number(e.target.value) || 0)} />
-                </Field>
-                <Field label="Tests pasados">
-                  <input type="number" min={0} className="input font-mono" value={draft.testStatus.passed || ''} onChange={(e) => updateTest('passed', Number(e.target.value) || 0)} />
-                </Field>
-                <Field label="Tests fallidos">
-                  <input type="number" min={0} className="input font-mono" value={draft.testStatus.failed || ''} onChange={(e) => updateTest('failed', Number(e.target.value) || 0)} />
-                </Field>
-                <Field label="Última corrida">
-                  <input type="date" className="input font-mono" value={draft.testStatus.lastRun || ''} onChange={(e) => updateTest('lastRun', e.target.value)} />
-                </Field>
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Tests (declaración manual)</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Tests totales">
+                    <input type="number" min={0} className="input font-mono" value={draft.testStatus.total || ''} onChange={(e) => updateTest('total', Number(e.target.value) || 0)} />
+                  </Field>
+                  <Field label="Tests pasados">
+                    <input type="number" min={0} className="input font-mono" value={draft.testStatus.passed || ''} onChange={(e) => updateTest('passed', Number(e.target.value) || 0)} />
+                  </Field>
+                  <Field label="Tests fallidos">
+                    <input type="number" min={0} className="input font-mono" value={draft.testStatus.failed || ''} onChange={(e) => updateTest('failed', Number(e.target.value) || 0)} />
+                  </Field>
+                  <Field label="Última corrida manual">
+                    <input type="date" className="input font-mono" value={draft.testStatus.lastRun || ''} onChange={(e) => updateTest('lastRun', e.target.value)} />
+                  </Field>
+                </div>
+                <p className="text-xs text-slate-600">
+                  OrbitalDock no ejecuta tests: registrá acá el resultado de la última corrida que hiciste vos.
+                </p>
               </div>
               <Field label="Links">
                 <div className="grid grid-cols-2 gap-4">

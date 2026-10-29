@@ -17,7 +17,11 @@ export function buildOpenCodePrompt(project) {
   lines.push(`- Categoría: ${project.categoria}`);
   lines.push(`- Estado: ${project.estado}`);
   lines.push(`- Tanda actual: ${tandaActual?.tanda || project.etapa || '—'}`);
-  lines.push(`- Tests: ${testDisplay(project)}${project.testStatus?.lastRun ? ` (última corrida: ${project.testStatus.lastRun})` : ''}`);
+  lines.push(
+    `- Tests (declarados a mano): ${testDisplay(project)}${
+      project.testStatus?.lastRun ? ` (última corrida declarada: ${project.testStatus.lastRun})` : ''
+    }`
+  );
   if (project.rutaLocal) lines.push(`- Ruta local: ${project.rutaLocal}`);
 
   const links = [];

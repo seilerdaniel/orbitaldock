@@ -105,10 +105,15 @@ export default function ProjectCard({ project, health, onCheck, onEdit, onDelete
         )}
       </div>
 
-      {/* Tests + progreso de tareas */}
+      {/* Tests declarados + progreso de tareas */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs">
-          <span className={cn('font-mono', testColor(project))}>{testDisplay(project)}</span>
+          <span className="flex items-center gap-1.5">
+            <span className="text-slate-500">Tests</span>
+            <span className={cn('font-mono', testColor(project))} title="Resultado declarado a mano: la app no ejecuta tests">
+              {testDisplay(project)}
+            </span>
+          </span>
           <span className="text-slate-500">
             Tareas: {done}/{total}
           </span>

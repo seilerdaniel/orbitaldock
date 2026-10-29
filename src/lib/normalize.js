@@ -57,7 +57,10 @@ function normalizeTestStatus(value) {
     passed = 0;
     failed = 0;
   }
-  return { total, passed, failed, lastRun: dateStr(raw.lastRun), label: str(raw.label).trim() };
+  // La etiqueta es derivada, nunca se acepta la del archivo: así un backup viejo
+  // con "Build OK" no puede reintroducir una métrica que la app no mide.
+  const label = total > 0 ? `${passed}/${total} declarado` : '';
+  return { total, passed, failed, lastRun: dateStr(raw.lastRun), label };
 }
 
 function normalizeDias(value) {

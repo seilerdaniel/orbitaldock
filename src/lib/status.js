@@ -55,12 +55,15 @@ export const formatMoney = (monto, moneda) =>
     currency: moneda
   }).format(monto);
 
+/**
+ * Estado de tests TAL COMO LO DECLARA EL USUARIO.
+ * OrbitalDock no ejecuta tests: no hay runner, así que la UI nunca debe presentar
+ * estos números como un resultado verificado por la app.
+ */
 export const testDisplay = (project) => {
   const t = project.testStatus;
-  if (!t) return '—';
-  if (t.label) return t.label;
-  if (t.total > 0) return `${t.passed}/${t.total} pass`;
-  return '—';
+  if (!t || t.total === 0) return 'Sin declarar';
+  return `${t.passed}/${t.total} declarado`;
 };
 
 export const testColor = (project) => {

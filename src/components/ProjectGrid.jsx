@@ -127,6 +127,6 @@ export default function ProjectGrid({ projects, health, onCheck, onCheckAll, onE
 
 function testShort(p) {
   const t = p.testStatus;
-  if (!t) return '—';
-  return t.label || (t.total > 0 ? `${t.passed}/${t.total}` : '—');
+  if (!t || t.total === 0) return 'tests sin declarar';
+  return `tests ${t.passed}/${t.total} declarados`;
 }
