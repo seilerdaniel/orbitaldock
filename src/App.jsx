@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, Search } from 'lucide-react';
 import { api, linkProbe } from './lib/api';
 import { SEED_PROYECTOS } from './data/seed';
+import { normalizeProject, normalizeProjectList } from './lib/normalize';
 import { formatFecha, todayName } from './lib/status';
 import { cn } from './lib/cn';
 import Sidebar from './components/Sidebar';
@@ -27,24 +28,40 @@ export default function App() {
 
   // ---------------- Persistencia ----------------
   useEffect(() => {
-    api.loadData().then((res) => {
-      let list = SEED_PROYECTOS;
-      const hasSaved = res.ok && Array.isArray(res.data?.projects) && res.data.projects.length > 0;
-      if (hasSaved) {
-        list = res.data.projects;
+    let alive = true;
+
+    const applySeed = () => normalizeProjectList(SEED_PROYECTOS);
+
+    api
+      .loadData()
+      .then((res) => {
+        if (!alive) return;
+        const saved = res?.ok && Array.isArray(res.data?.projects) ? normalizeProjectList(res.data.projects) : [];
+        let list = saved.length > 0 ? saved : applySeed();
+
         // Migración: el config.json de v0.1.0 solo tenía 9 proyectos y no incluía OrbitalDock.
         // Si falta, se fusiona el registro del seed y se persiste la lista de 10 de inmediato.
-        if (!list.some((p) => p.id === 'orbitaldock')) {
-          const seedOrbital = SEED_PROYECTOS.find((p) => p.id === 'orbitaldock');
+        if (saved.length > 0 && !saved.some((p) => p.id === 'orbitaldock')) {
+          const seedOrbital = applySeed().find((p) => p.id === 'orbitaldock');
           if (seedOrbital) {
-            list = [...list, structuredClone(seedOrbital)];
+            list = [...saved, seedOrbital];
             api.saveData({ projects: list }).catch((err) => console.error('save-data (migración) falló:', err));
           }
         }
-      }
-      loadedRef.current = true;
-      setProjects(list);
-    });
+
+        loadedRef.current = true;
+        setProjects(list);
+      })
+      .catch((err) => {
+        if (!alive) return;
+        console.error('load-data falló:', err);
+        loadedRef.current = true;
+        setProjects(applySeed());
+      });
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   // Notificación nativa de bienvenida al iniciar la app (una sola vez por sesión)
@@ -71,29 +88,32 @@ export default function App() {
     return () => clearTimeout(saveTimer.current);
   }, [projects]);
 
-  const saveNow = useCallback(() => {
+  // Persiste una lista concreta en disco (sin leer el estado de React, que puede
+  // estar desactualizado dentro del mismo tick que el setProjects que la originó).
+  const saveNow = useCallback((next) => {
     clearTimeout(saveTimer.current);
-    return api.saveData({ projects });
-  }, [projects]);
+    return api.saveData({ projects: normalizeProjectList(next) });
+  }, []);
 
   // ---------------- CRUD ----------------
   const openEdit = (project) => setEditing({ project: structuredClone(project), isNew: false });
   const openNew = () => setEditing({ project: blankProject(), isNew: true });
 
   const handleSave = (draft) => {
-    setProjects((prev) => {
-      const exists = prev.some((p) => p.id === draft.id);
-      const next = exists ? prev.map((p) => (p.id === draft.id ? draft : p)) : [...prev, draft];
-      return next;
-    });
-    saveNow();
+    const project = normalizeProject(draft);
+    const next = projects.some((p) => p.id === project.id)
+      ? projects.map((p) => (p.id === project.id ? project : p))
+      : [...projects, project];
+    setProjects(next);
+    saveNow(next);
     setEditing(null);
   };
 
   const handleDelete = (draft) => {
     if (!window.confirm(`¿Eliminar "${draft.nombre}"? Esta acción no se puede deshacer.`)) return;
-    setProjects((prev) => prev.filter((p) => p.id !== draft.id));
-    saveNow();
+    const next = projects.filter((p) => p.id !== draft.id);
+    setProjects(next);
+    saveNow(next);
     setEditing(null);
   };
 
@@ -106,10 +126,10 @@ export default function App() {
     ) {
       return;
     }
-    const list = structuredClone(SEED_PROYECTOS);
+    const list = normalizeProjectList(SEED_PROYECTOS);
     setProjects(list);
-    api.saveData({ projects: list });
-  }, []);
+    saveNow(list);
+  }, [saveNow]);
 
   // Acumular minutos trabajados por proyecto cuando finaliza un Pomodoro
   const handlePomodoroComplete = useCallback((projectId, minutes) => {
@@ -183,10 +203,14 @@ export default function App() {
     URL.revokeObjectURL(url);
   }, [projects]);
 
-  const importBackup = useCallback((list) => {
-    setProjects(list);
-    saveNow();
-  }, [saveNow]);
+  const importBackup = useCallback(
+    (list) => {
+      const next = normalizeProjectList(list);
+      setProjects(next);
+      saveNow(next);
+    },
+    [saveNow]
+  );
 
   // ---------------- Command Palette (Ctrl+K / Cmd+K) ----------------
   useEffect(() => {
