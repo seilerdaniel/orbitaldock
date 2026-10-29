@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarDays, LayoutGrid, Orbit, Settings, Wallet } from 'lucide-react';
+import { CalendarDays, LayoutGrid, Orbit, Plus, Settings, Wallet } from 'lucide-react';
 import { cn } from '../lib/cn';
 
 const NAV = [
@@ -9,7 +9,7 @@ const NAV = [
   { id: 'config', label: 'Configuración', icon: Settings }
 ];
 
-export default function Sidebar({ view, onViewChange }) {
+export default function Sidebar({ view, onViewChange, onNew }) {
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-slate-800 bg-slate-900">
       {/* Brand */}
@@ -21,6 +21,14 @@ export default function Sidebar({ view, onViewChange }) {
           <p className="font-semibold leading-tight text-slate-100">OrbitalDock</p>
           <p className="text-xs text-slate-500">Control de portafolio</p>
         </div>
+      </div>
+
+      {/* Acción principal */}
+      <div className="px-3 pb-2">
+        <button type="button" className="btn btn-primary w-full" onClick={onNew}>
+          <Plus size={15} />
+          Nuevo proyecto
+        </button>
       </div>
 
       {/* Navegación */}

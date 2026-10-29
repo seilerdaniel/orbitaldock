@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Code2, ExternalLink, Figma, FolderOpen, Github, Pencil } from 'lucide-react';
+import { Code2, ExternalLink, Figma, FolderOpen, Github, Pencil, Trash2 } from 'lucide-react';
 import { api, linkProbe } from '../lib/api';
+import { cn } from '../lib/cn';
 import { buildOpenCodePrompt } from '../lib/opencodePrompt';
 import Tooltip from './ui/Tooltip';
 import OpenCodePromptButton from './OpenCodePromptButton';
 
 /** Acciones rápidas de un proyecto: links externos, VS Code, carpeta, prompt y edición. */
-export default function ProjectActions({ project, onEdit, compact = false }) {
+export default function ProjectActions({ project, onEdit, onDelete, compact = false }) {
   const [msg, setMsg] = useState(null);
 
   const flash = (text) => {
@@ -102,6 +103,17 @@ export default function ProjectActions({ project, onEdit, compact = false }) {
           <Tooltip content="Editar proyecto">
             <button type="button" className={btn} onClick={() => onEdit(project)}>
               <Pencil size={15} />
+            </button>
+          </Tooltip>
+        )}
+        {onDelete && (
+          <Tooltip content="Eliminar proyecto">
+            <button
+              type="button"
+              className={cn(btn, 'hover:bg-red-500/10 hover:text-red-400')}
+              onClick={() => onDelete(project)}
+            >
+              <Trash2 size={15} />
             </button>
           </Tooltip>
         )}

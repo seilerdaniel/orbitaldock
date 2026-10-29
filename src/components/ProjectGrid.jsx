@@ -6,8 +6,9 @@ import { cn } from '../lib/cn';
 import ProjectCard from './ProjectCard';
 import ProjectActions from './ProjectActions';
 import EmptyState from './ui/EmptyState';
+import EmptyPortfolio from './ui/EmptyPortfolio';
 
-export default function ProjectGrid({ projects, health, onCheck, onCheckAll, onEdit, onNew }) {
+export default function ProjectGrid({ projects, health, onCheck, onCheckAll, onEdit, onDelete, onNew }) {
   const [query, setQuery] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('Todos');
   const [viewMode, setViewMode] = useState('grid');
@@ -24,9 +25,14 @@ export default function ProjectGrid({ projects, health, onCheck, onCheckAll, onE
   );
 
   useEffect(() => {
+    if (projects.length === 0) return;
     onCheckAll?.(filtered);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projects]);
+  }, [projects.length]);
+
+  if (projects.length === 0) {
+    return <EmptyPortfolio onCreate={onNew} />;
+  }
 
   return (
     <div className="space-y-6">
@@ -89,7 +95,7 @@ export default function ProjectGrid({ projects, health, onCheck, onCheckAll, onE
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((p) => (
-            <ProjectCard key={p.id} project={p} health={health} onCheck={onCheck} onEdit={onEdit} />
+            <ProjectCard key={p.id} project={p} health={health} onCheck={onCheck} onEdit={onEdit} onDelete={onDelete} />
           ))}
         </div>
       ) : (
@@ -110,7 +116,7 @@ export default function ProjectGrid({ projects, health, onCheck, onCheckAll, onE
                 {p.estado}
               </span>
               <span className="truncate font-mono text-xs text-slate-400">{p.etapa || '—'}</span>
-              <ProjectActions project={p} onEdit={onEdit} compact />
+              <ProjectActions project={p} onEdit={onEdit} onDelete={onDelete} compact />
             </div>
           ))}
         </div>

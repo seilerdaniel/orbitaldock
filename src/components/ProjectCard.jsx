@@ -21,7 +21,7 @@ const TONE_BY_CATEGORIA = {
   'Experimento/Utility': 'amber'
 };
 
-export default function ProjectCard({ project, health, onCheck, onEdit, showHealth = true }) {
+export default function ProjectCard({ project, health, onCheck, onEdit, onDelete, showHealth = true }) {
   const h = health?.[project.id];
   const probe = linkProbe(project.links.vercel) || linkProbe(project.links.admin);
   const { total, done, pct } = taskStats(project);
@@ -162,7 +162,7 @@ export default function ProjectCard({ project, health, onCheck, onEdit, showHeal
 
       {/* Acciones */}
       <div className="flex items-center justify-between gap-2 border-t border-slate-700/50 pt-3">
-        <ProjectActions project={project} onEdit={onEdit} />
+        <ProjectActions project={project} onEdit={onEdit} onDelete={onDelete} />
       </div>
 
       {/* Dot semántico del estado */}

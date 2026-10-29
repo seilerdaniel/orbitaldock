@@ -4,8 +4,9 @@ import { DIAS, todayIndex, todayName, formatFecha } from '../lib/status';
 import { cn } from '../lib/cn';
 import ProjectCard from './ProjectCard';
 import EmptyState from './ui/EmptyState';
+import EmptyPortfolio from './ui/EmptyPortfolio';
 
-export default function DashboardAgenda({ projects, health, onCheck, onCheckAll, onEdit }) {
+export default function DashboardAgenda({ projects, health, onCheck, onCheckAll, onEdit, onDelete, onNew }) {
   const [selectedDay, setSelectedDay] = useState(todayIndex());
 
   const filtered = useMemo(
@@ -13,10 +14,17 @@ export default function DashboardAgenda({ projects, health, onCheck, onCheckAll,
     [projects, selectedDay]
   );
 
+  // Se re-verifica al cambiar de día o cuando cambia la cantidad de proyectos,
+  // no en cada edición (evita una ráfaga de requests por cada tecla guardada).
   useEffect(() => {
+    if (projects.length === 0) return;
     onCheckAll?.(filtered);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDay, projects]);
+  }, [selectedDay, projects.length]);
+
+  if (projects.length === 0) {
+    return <EmptyPortfolio onCreate={onNew} />;
+  }
 
   return (
     <div className="space-y-6">
@@ -74,7 +82,7 @@ export default function DashboardAgenda({ projects, health, onCheck, onCheckAll,
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((p) => (
-            <ProjectCard key={p.id} project={p} health={health} onCheck={onCheck} onEdit={onEdit} />
+            <ProjectCard key={p.id} project={p} health={health} onCheck={onCheck} onEdit={onEdit} onDelete={onDelete} />
           ))}
         </div>
       )}

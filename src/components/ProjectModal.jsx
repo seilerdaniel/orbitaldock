@@ -18,7 +18,8 @@ export const blankProject = () => ({
   links: { vercel: '', github: '', admin: '', figma: '' },
   costosMensuales: [],
   tareasPorTanda: [],
-  notasTecnicas: ''
+  notasTecnicas: '',
+  tiempoAnalytics: {}
 });
 
 const TABS = ['General', 'Agenda', 'Tandas', 'Costos', 'Notas', 'Backup'];

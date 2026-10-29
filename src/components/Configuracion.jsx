@@ -1,10 +1,10 @@
 import React, { useRef, useState } from 'react';
-import { Check, Copy, Download, Plus, RotateCcw, Upload } from 'lucide-react';
+import { Check, Copy, Download, Plus, Upload } from 'lucide-react';
 import { copyText } from '../lib/opencodePrompt';
 import EmptyState from './ui/EmptyState';
 
 /** Vista Configuración: gestión de proyectos + copias de seguridad. */
-export default function Configuracion({ projects, onNew, onEdit, onExport, onImport, onReset }) {
+export default function Configuracion({ projects, onNew, onEdit, onExport, onImport }) {
   const fileRef = useRef(null);
   const [copied, setCopied] = useState(false);
 
@@ -76,17 +76,6 @@ export default function Configuracion({ projects, onNew, onEdit, onExport, onImp
           <Upload size={15} />
           Importar backup
         </button>
-        {onReset && (
-          <button
-            type="button"
-            className="btn btn-ghost border-amber-500/30 text-amber-300 hover:border-amber-500/50 hover:bg-amber-500/10 hover:text-amber-200"
-            onClick={onReset}
-            title="Recarga los 10 proyectos originales definidos en el seed y sobreescribe los datos guardados"
-          >
-            <RotateCcw size={15} />
-            Restablecer a Datos por Defecto
-          </button>
-        )}
       </div>
 
       {/* Lista de proyectos */}

@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Search } from 'lucide-react';
 import { api, linkProbe } from './lib/api';
-import { SEED_PROYECTOS } from './data/seed';
 import { normalizeProject, normalizeProjectList } from './lib/normalize';
 import { formatFecha, todayName } from './lib/status';
 import { cn } from './lib/cn';
@@ -30,33 +29,19 @@ export default function App() {
   useEffect(() => {
     let alive = true;
 
-    const applySeed = () => normalizeProjectList(SEED_PROYECTOS);
-
     api
       .loadData()
       .then((res) => {
         if (!alive) return;
         const saved = res?.ok && Array.isArray(res.data?.projects) ? normalizeProjectList(res.data.projects) : [];
-        let list = saved.length > 0 ? saved : applySeed();
-
-        // Migración: el config.json de v0.1.0 solo tenía 9 proyectos y no incluía OrbitalDock.
-        // Si falta, se fusiona el registro del seed y se persiste la lista de 10 de inmediato.
-        if (saved.length > 0 && !saved.some((p) => p.id === 'orbitaldock')) {
-          const seedOrbital = applySeed().find((p) => p.id === 'orbitaldock');
-          if (seedOrbital) {
-            list = [...saved, seedOrbital];
-            api.saveData({ projects: list }).catch((err) => console.error('save-data (migración) falló:', err));
-          }
-        }
-
         loadedRef.current = true;
-        setProjects(list);
+        setProjects(saved);
       })
       .catch((err) => {
         if (!alive) return;
         console.error('load-data falló:', err);
         loadedRef.current = true;
-        setProjects(applySeed());
+        setProjects([]);
       });
 
     return () => {
@@ -68,8 +53,9 @@ export default function App() {
   useEffect(() => {
     if (!loadedRef.current || welcomeFired.current) return;
     welcomeFired.current = true;
+    if (projects.length === 0) return;
     const hoy = todayName();
-    const count = projects.filter((p) => (p.diasAsignados || []).includes(hoy)).length;
+    const count = projects.filter((p) => p.diasAsignados.includes(hoy)).length;
     api.showNotification({
       title: '🚀 OrbitalDock v0.4.0',
       body: `Tienes ${count} ${count === 1 ? 'proyecto' : 'proyectos'} programados para hoy`
@@ -116,20 +102,6 @@ export default function App() {
     saveNow(next);
     setEditing(null);
   };
-
-  // Restablecer a los 10 proyectos originales del seed
-  const handleResetSeed = useCallback(() => {
-    if (
-      !window.confirm(
-        '¿Restablecer todos los proyectos a los datos por defecto (seed)? Se perderán los cambios y proyectos creados.'
-      )
-    ) {
-      return;
-    }
-    const list = normalizeProjectList(SEED_PROYECTOS);
-    setProjects(list);
-    saveNow(list);
-  }, [saveNow]);
 
   // Acumular minutos trabajados por proyecto cuando finaliza un Pomodoro
   const handlePomodoroComplete = useCallback((projectId, minutes) => {
@@ -244,7 +216,7 @@ export default function App() {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar view={view} onViewChange={goTo} />
+      <Sidebar view={view} onViewChange={goTo} onNew={openNew} />
 
       <main className="flex min-w-0 flex-1 flex-col">
         {/* TopBar */}
@@ -285,6 +257,8 @@ export default function App() {
               onCheck={checkProject}
               onCheckAll={checkAll}
               onEdit={openEdit}
+              onDelete={handleDelete}
+              onNew={openNew}
             />
           )}
           {view === 'proyectos' && (
@@ -294,6 +268,7 @@ export default function App() {
               onCheck={checkProject}
               onCheckAll={checkAll}
               onEdit={openEdit}
+              onDelete={handleDelete}
               onNew={openNew}
             />
           )}
@@ -305,7 +280,6 @@ export default function App() {
               onEdit={openEdit}
               onExport={exportBackup}
               onImport={importBackup}
-              onReset={handleResetSeed}
             />
           )}
         </div>
