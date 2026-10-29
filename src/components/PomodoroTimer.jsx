@@ -1,15 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pause, Play, RotateCcw, Timer, Coffee } from 'lucide-react';
 import { api } from '../lib/api';
+import { localDateKey } from '../lib/status';
 import { cn } from '../lib/cn';
 
 const FOCUS_SECONDS = 25 * 60;
 const BREAK_SECONDS = 5 * 60;
 const CYCLES_KEY = 'orbitaldock-pomodoro-cycles';
 
-function dateKey() {
-  return new Date().toISOString().slice(0, 10);
-}
+const dateKey = () => localDateKey();
 
 function loadCycles() {
   try {

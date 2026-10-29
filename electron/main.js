@@ -1,11 +1,13 @@
 // OrbitalDock — Main Process (CommonJS)
-const { app, BrowserWindow, shell, ipcMain, Notification } = require('electron');
+const { app, BrowserWindow, shell, ipcMain, Notification, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { execFile, spawn } = require('child_process');
 
 // Archivo de persistencia local: <userData>/config.json
 const dataFile = () => path.join(app.getPath('userData'), 'config.json');
+
+let mainWindow = null;
 
 // Instancia única
 const gotLock = app.requestSingleInstanceLock();
@@ -30,6 +32,10 @@ function createWindow() {
     }
   });
 
+  mainWindow = win;
+  win.on('closed', () => {
+    if (mainWindow === win) mainWindow = null;
+  });
   win.once('ready-to-show', () => win.show());
 
   if (!app.isPackaged) {
@@ -48,6 +54,34 @@ function isValidHttpUrl(value) {
     return false;
   }
 }
+
+// Endurecimiento común a cualquier WebContents (incluye ventanas futuras).
+function hardenWebContents(contents) {
+  // Sin window.open: los links externos se abren en el navegador del sistema.
+  contents.setWindowOpenHandler(({ url }) => {
+    if (isValidHttpUrl(url)) shell.openExternal(url).catch(() => {});
+    return { action: 'deny' };
+  });
+
+  // La app es una SPA local: cualquier navegación fuera del documento actual se cancela.
+  contents.on('will-navigate', (event, url) => {
+    if (url === contents.getURL()) return; // recarga completa de Vite (HMR)
+    event.preventDefault();
+    if (isValidHttpUrl(url)) shell.openExternal(url).catch(() => {});
+  });
+
+  contents.on('will-attach-webview', (event) => event.preventDefault());
+}
+
+app.on('web-contents-created', (_event, contents) => hardenWebContents(contents));
+
+// Segunda instancia: enfocar la ventana existente en lugar de abrir otra.
+app.on('second-instance', () => {
+  if (!mainWindow) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+});
 
 // Resuelve el ejecutable real de VS Code a partir del shim del PATH.
 // En Windows "code" es un .cmd y no puede lanzarse sin shell, así que se busca
@@ -283,7 +317,7 @@ function registerIpcHandlers() {
 
     // Camino principal: ejecutable real, sin shell → la ruta nunca se interpreta como comando.
     if (command.exe) {
-      const result = await spawnDetached(command.exe, [target]);
+      const result = await spawnDetached(command.exe, ['--reuse-window', target]);
       if (result.ok) return result;
     }
 
@@ -294,7 +328,7 @@ function registerIpcHandlers() {
       if (/["%\r\n]/.test(target)) {
         return { ok: false, error: 'La ruta contiene caracteres no soportados por el shim de VS Code.' };
       }
-      return spawnDetached(command.shim, [`"${target}"`], { shell: true });
+      return spawnDetached(command.shim, ['--reuse-window', `"${target}"`], { shell: true });
     }
 
     return { ok: false, error: 'No se pudo abrir VS Code' };
@@ -381,6 +415,8 @@ app.whenReady().then(() => {
   if (process.platform === 'win32') {
     app.setAppUserModelId('com.orbitaldock.app');
   }
+  // La app no usa cámara, micrófono, geolocalización ni notificaciones web: se deniega todo.
+  session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
   registerIpcHandlers();
   createWindow();
 

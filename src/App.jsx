@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, Search } from 'lucide-react';
 import { api, linkProbe } from './lib/api';
 import { normalizeProject, normalizeProjectList } from './lib/normalize';
-import { formatFecha, todayName } from './lib/status';
+import { formatFecha, todayName, localDateKey } from './lib/status';
 import { cn } from './lib/cn';
 import Sidebar from './components/Sidebar';
 import DashboardAgenda from './components/DashboardAgenda';
@@ -24,6 +24,7 @@ export default function App() {
   const saveTimer = useRef(null);
   const contentRef = useRef(null);
   const welcomeFired = useRef(false);
+  const alertedRef = useRef(new Set());
 
   // ---------------- Persistencia ----------------
   useEffect(() => {
@@ -106,7 +107,7 @@ export default function App() {
   // Acumular minutos trabajados por proyecto cuando finaliza un Pomodoro
   const handlePomodoroComplete = useCallback((projectId, minutes) => {
     if (!projectId || !minutes) return;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateKey();
     setProjects((prev) =>
       prev.map((p) => {
         if (p.id !== projectId) return p;
@@ -128,7 +129,11 @@ export default function App() {
     }
     setHealth((h) => ({ ...h, [project.id]: { checking: true, ok: null } }));
     const res = await api.checkHealth({ url, timeoutMs: 4000 });
-    if (res && !res.ok) {
+    if (res && res.ok) {
+      alertedRef.current.delete(project.id);
+    } else if (res && !alertedRef.current.has(project.id)) {
+      // Una sola notificación por caída: se rearma cuando el proyecto vuelve a responder.
+      alertedRef.current.add(project.id);
       const reason = res.status ? `HTTP ${res.status}` : res.error || 'sin respuesta';
       api.showNotification({
         title: '⚠️ Alerta de Caída',
@@ -168,7 +173,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `orbitaldock-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `orbitaldock-backup-${localDateKey()}.json`;
     document.body.appendChild(a);
     a.click();
     a.remove();

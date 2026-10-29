@@ -28,6 +28,18 @@ export const todayIndex = () => (new Date().getDay() + 6) % 7;
 
 export const todayName = () => DIAS[todayIndex()];
 
+/**
+ * Clave de fecha local YYYY-MM-DD.
+ * No usar toISOString(): en UTC-3 un Pomodoro de las 22:00 cae en el día siguiente,
+ * y en husos positivos la semana arranca un día antes.
+ */
+export const localDateKey = (date = new Date()) => {
+  const d = date instanceof Date ? date : new Date(date);
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${month}-${day}`;
+};
+
 export const formatFecha = (date = new Date()) => {
   const value = new Intl.DateTimeFormat('es-AR', {
     weekday: 'long',

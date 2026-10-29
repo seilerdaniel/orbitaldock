@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Clock, DollarSign, RefreshCw, Wallet } from 'lucide-react';
 import { CATEGORIAS } from '../data/seed';
-import { formatMoney } from '../lib/status';
+import { formatMoney, localDateKey } from '../lib/status';
 import { fetchDollarRates, fmtArs } from '../lib/forex';
 import { cn } from '../lib/cn';
 import EmptyState from './ui/EmptyState';
@@ -37,7 +37,7 @@ function useWeekStats(projects) {
     for (let i = 0; i < 7; i++) {
       const d = new Date(monday);
       d.setDate(monday.getDate() + i);
-      days.push(d.toISOString().slice(0, 10));
+      days.push(localDateKey(d));
     }
 
     const perProject = [];
