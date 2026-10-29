@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { GitBranch, Loader2, RefreshCw, Target } from 'lucide-react';
 import { api, linkProbe } from '../lib/api';
 import { cn } from '../lib/cn';
-import { testDisplay, testColor, taskStats, ESTADO_STYLES } from '../lib/status';
+import { testDisplay, taskStats, ESTADO_STYLES } from '../lib/status';
 import Badge from './ui/Badge';
 import Tooltip from './ui/Tooltip';
 import ProjectActions from './ProjectActions';
@@ -110,7 +110,10 @@ export default function ProjectCard({ project, health, onCheck, onEdit, onDelete
         <div className="flex items-center justify-between text-xs">
           <span className="flex items-center gap-1.5">
             <span className="text-slate-500">Tests</span>
-            <span className={cn('font-mono', testColor(project))} title="Resultado declarado a mano: la app no ejecuta tests">
+            <span
+              className="font-mono text-slate-300"
+              title="Resultado declarado a mano: la app no ejecuta tests"
+            >
               {testDisplay(project)}
             </span>
           </span>

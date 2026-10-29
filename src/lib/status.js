@@ -66,13 +66,6 @@ export const testDisplay = (project) => {
   return `${t.passed}/${t.total} declarado`;
 };
 
-export const testColor = (project) => {
-  const t = project.testStatus;
-  if (!t || t.total === 0) return 'text-slate-500';
-  const ok = t.failed === 0 && t.passed >= t.total;
-  return ok ? 'text-emerald-400' : 'text-red-400';
-};
-
 export const taskStats = (project) => {
   const total = project.tareasPorTanda.reduce((n, t) => n + t.tareas.length, 0);
   const done = project.tareasPorTanda.reduce(
