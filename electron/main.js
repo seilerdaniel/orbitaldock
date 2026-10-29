@@ -2,7 +2,7 @@
 const { app, BrowserWindow, shell, ipcMain, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { exec, execFile, spawn } = require('child_process');
+const { execFile, spawn } = require('child_process');
 
 // Archivo de persistencia local: <userData>/config.json
 const dataFile = () => path.join(app.getPath('userData'), 'config.json');
@@ -47,6 +47,65 @@ function isValidHttpUrl(value) {
   } catch {
     return false;
   }
+}
+
+// Resuelve el ejecutable real de VS Code a partir del shim del PATH.
+// En Windows "code" es un .cmd y no puede lanzarse sin shell, así que se busca
+// el .exe de la instalación (Code.exe / "Code - Insiders.exe") para invocarlo
+// directamente, sin intermediarios ni interpolación de comandos.
+function resolveVSCodeCommand() {
+  if (process.platform !== 'win32') return Promise.resolve({ exe: 'code' });
+
+  return new Promise((resolve) => {
+    execFile(
+      'where',
+      ['code'],
+      { windowsHide: true, timeout: 10000, encoding: 'utf8' },
+      (err, stdout) => {
+        if (err) return resolve(null);
+        const shim = String(stdout || '')
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .find(Boolean);
+        if (!shim) return resolve(null);
+        if (/\.exe$/i.test(shim)) return resolve({ exe: shim });
+
+        // <instalación>\bin\code.cmd → el ejecutable está un nivel arriba.
+        const installDir = path.resolve(path.dirname(shim), '..');
+        try {
+          const exe = fs
+            .readdirSync(installDir)
+            .filter((name) => /^code.*\.exe$/i.test(name))
+            .map((name) => path.join(installDir, name))
+            .find((candidate) => fs.existsSync(candidate));
+          if (exe) return resolve({ exe });
+        } catch {
+          /* sin acceso al directorio de instalación: se usa el shim */
+        }
+        return resolve({ shim });
+      }
+    );
+  });
+}
+
+function spawnDetached(file, args, options = {}) {
+  return new Promise((resolve) => {
+    try {
+      const child = spawn(file, args, {
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true,
+        ...options
+      });
+      child.on('error', (err) => resolve({ ok: false, error: err.message }));
+      child.on('spawn', () => {
+        child.unref();
+        resolve({ ok: true });
+      });
+    } catch (err) {
+      resolve({ ok: false, error: err.message });
+    }
+  });
 }
 
 // ---------------- IPC HANDLERS ----------------
@@ -203,32 +262,42 @@ function registerIpcHandlers() {
     }
   });
 
-  // Abrir carpeta local en VS Code (code <ruta>)
-  ipcMain.handle('open-vscode', (_event, rutaLocal) => {
-    return new Promise((resolve) => {
-      try {
-        if (typeof rutaLocal !== 'string' || !rutaLocal.trim()) {
-          resolve({ ok: false, error: 'Ruta local vacía' });
-          return;
-        }
-        if (!fs.existsSync(rutaLocal)) {
-          resolve({ ok: false, error: 'La ruta no existe en el disco' });
-          return;
-        }
-        exec(`code "${rutaLocal}"`, { windowsHide: true, timeout: 15000 }, (err, _stdout, stderr) => {
-          if (err) {
-            resolve({
-              ok: false,
-              error: `No se pudo abrir VS Code. Verificá que el comando "code" esté instalado en el PATH. (${stderr || err.message})`
-            });
-          } else {
-            resolve({ ok: true });
-          }
-        });
-      } catch (err) {
-        resolve({ ok: false, error: err.message });
+  // Abrir carpeta local en VS Code
+  ipcMain.handle('open-vscode', async (_event, rutaLocal) => {
+    if (typeof rutaLocal !== 'string' || !rutaLocal.trim()) {
+      return { ok: false, error: 'Ruta local vacía' };
+    }
+    const target = rutaLocal.trim();
+    if (!fs.existsSync(target)) {
+      return { ok: false, error: 'La ruta no existe en el disco' };
+    }
+
+    const command = await resolveVSCodeCommand();
+    if (!command) {
+      return {
+        ok: false,
+        error:
+          'No se encontró el comando "code" en el PATH. Instalalo desde VS Code con "Shell Command: Install code command in PATH".'
+      };
+    }
+
+    // Camino principal: ejecutable real, sin shell → la ruta nunca se interpreta como comando.
+    if (command.exe) {
+      const result = await spawnDetached(command.exe, [target]);
+      if (result.ok) return result;
+    }
+
+    // Fallback: shim .cmd/.bat. Con shell:true los argumentos se concatenan sin
+    // escapar, así que se cita la ruta a mano y se rechazan comillas y "%" para
+    // que no se pueda cerrar la cita ni inyectar una expansión de variable.
+    if (command.shim) {
+      if (/["%\r\n]/.test(target)) {
+        return { ok: false, error: 'La ruta contiene caracteres no soportados por el shim de VS Code.' };
       }
-    });
+      return spawnDetached(command.shim, [`"${target}"`], { shell: true });
+    }
+
+    return { ok: false, error: 'No se pudo abrir VS Code' };
   });
 
   // Abrir la ruta local en el Explorador de Archivos / Finder

@@ -47,11 +47,14 @@ export default function ProjectModal({ project, isNew, projectsCount, onClose, o
 
   if (!draft) return null;
 
-  const set = (patch) => setDraft((d) => ({ ...d, ...patch }));
+  // Acepta tanto un patch ({ campo: valor }) como un updater ((draft) => patch).
+  const set = (patch) =>
+    setDraft((d) => ({ ...d, ...(typeof patch === 'function' ? patch(d) : patch) }));
   const setLink = (key, value) => setDraft((d) => ({ ...d, links: { ...d.links, [key]: value } }));
 
   const toggleDia = (dia) =>
-    set((d) => ({
+    setDraft((d) => ({
+      ...d,
       diasAsignados: d.diasAsignados.includes(dia)
         ? d.diasAsignados.filter((x) => x !== dia)
         : [...d.diasAsignados, dia]
