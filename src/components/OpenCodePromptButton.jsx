@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Check, Sparkles } from 'lucide-react';
 import { buildOpenCodePrompt, copyText } from '../lib/opencodePrompt';
 import { cn } from '../lib/cn';
@@ -6,12 +6,16 @@ import { cn } from '../lib/cn';
 /** Botón que copia al portapapeles el prompt de contexto del proyecto para OpenCode. */
 export default function OpenCodePromptButton({ project, className }) {
   const [copied, setCopied] = useState(false);
+  const timerRef = useRef(null);
+
+  useEffect(() => () => clearTimeout(timerRef.current), []);
 
   const handle = async (e) => {
     e.stopPropagation();
     const ok = await copyText(buildOpenCodePrompt(project));
+    clearTimeout(timerRef.current);
     setCopied(ok);
-    setTimeout(() => setCopied(false), 2000);
+    timerRef.current = setTimeout(() => setCopied(false), 2000);
   };
 
   return (

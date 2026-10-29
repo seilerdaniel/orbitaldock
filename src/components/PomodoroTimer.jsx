@@ -44,6 +44,22 @@ export default function PomodoroTimer({ projects = [], onPomodoroComplete }) {
 
   const audioCtxRef = useRef(null);
 
+  // Al desmontar se cierra el AudioContext: si no, el dispositivo de audio queda abierto.
+  useEffect(
+    () => () => {
+      const ctx = audioCtxRef.current;
+      audioCtxRef.current = null;
+      if (ctx && typeof ctx.close === 'function') {
+        try {
+          ctx.close().catch(() => {});
+        } catch {
+          /* ya estaba cerrado */
+        }
+      }
+    },
+    []
+  );
+
   const total = mode === 'focus' ? FOCUS_SECONDS : BREAK_SECONDS;
   const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
   const ss = String(secondsLeft % 60).padStart(2, '0');

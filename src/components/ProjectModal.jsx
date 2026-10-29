@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Download, Plus, Save, Trash2, Upload, X } from 'lucide-react';
 import { TIPOS, ESTADOS, CATEGORIAS, DIAS } from '../data/seed';
+import { createId } from '../lib/normalize';
 import { cn } from '../lib/cn';
 import Badge from './ui/Badge';
 import EmptyState from './ui/EmptyState';
 
 export const blankProject = () => ({
-  id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `p-${Date.now()}`,
+  id: createId(),
   nombre: '',
   tipo: 'Web',
   categoria: 'SaaS Propio',
@@ -297,14 +298,19 @@ function TandasEditor({ draft, setDraft }) {
   const addTanda = () =>
     setDraft((d) => ({
       ...d,
-      tareasPorTanda: [...d.tareasPorTanda, { tanda: `Tanda 0${d.tareasPorTanda.length + 1}: `, tareas: [] }]
+      tareasPorTanda: [
+        ...d.tareasPorTanda,
+        { id: createId(), tanda: `Tanda 0${d.tareasPorTanda.length + 1}: `, tareas: [] }
+      ]
     }));
 
   const removeTanda = (ti) =>
     setDraft((d) => ({ ...d, tareasPorTanda: d.tareasPorTanda.filter((_, i) => i !== ti) }));
 
   const addTask = (ti) =>
-    setTanda(ti, { tareas: [...draft.tareasPorTanda[ti].tareas, { texto: '', completado: false }] });
+    setTanda(ti, {
+      tareas: [...draft.tareasPorTanda[ti].tareas, { id: createId(), texto: '', completado: false }]
+    });
 
   const setTask = (ti, taskIdx, patch) =>
     setTanda(ti, {
@@ -333,7 +339,7 @@ function TandasEditor({ draft, setDraft }) {
   return (
     <div className="space-y-4">
       {draft.tareasPorTanda.map((tanda, ti) => (
-        <div key={ti} className="card space-y-2 p-4">
+        <div key={tanda.id} className="card space-y-2 p-4">
           <div className="flex items-center gap-2">
             <input
               className="input font-mono text-xs"
@@ -347,7 +353,7 @@ function TandasEditor({ draft, setDraft }) {
           </div>
           {tanda.tareas.length === 0 && <p className="text-xs text-slate-600">Sin tareas en esta tanda.</p>}
           {tanda.tareas.map((task, taskIdx) => (
-            <div key={taskIdx} className="flex items-center gap-2">
+            <div key={task.id} className="flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={task.completado}
@@ -387,7 +393,10 @@ function CostosEditor({ draft, setDraft }) {
     }));
 
   const addCosto = () =>
-    setDraft((d) => ({ ...d, costosMensuales: [...d.costosMensuales, { concepto: '', monto: 0, moneda: 'USD' }] }));
+    setDraft((d) => ({
+      ...d,
+      costosMensuales: [...d.costosMensuales, { id: createId(), concepto: '', monto: 0, moneda: 'USD' }]
+    }));
 
   const removeCosto = (idx) =>
     setDraft((d) => ({ ...d, costosMensuales: d.costosMensuales.filter((_, i) => i !== idx) }));
@@ -411,7 +420,7 @@ function CostosEditor({ draft, setDraft }) {
   return (
     <div className="space-y-3">
       {draft.costosMensuales.map((costo, idx) => (
-        <div key={idx} className="flex items-center gap-2">
+        <div key={costo.id} className="flex items-center gap-2">
           <input
             className="input flex-1 font-mono text-xs"
             value={costo.concepto}

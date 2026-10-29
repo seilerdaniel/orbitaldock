@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Code2, ExternalLink, Figma, FolderOpen, Github, Pencil, Trash2 } from 'lucide-react';
 import { api, linkProbe } from '../lib/api';
 import { cn } from '../lib/cn';
@@ -9,10 +9,14 @@ import OpenCodePromptButton from './OpenCodePromptButton';
 /** Acciones rápidas de un proyecto: links externos, VS Code, carpeta, prompt y edición. */
 export default function ProjectActions({ project, onEdit, onDelete, compact = false }) {
   const [msg, setMsg] = useState(null);
+  const msgTimer = useRef(null);
+
+  useEffect(() => () => clearTimeout(msgTimer.current), []);
 
   const flash = (text) => {
+    clearTimeout(msgTimer.current);
     setMsg(text);
-    setTimeout(() => setMsg(null), 2500);
+    msgTimer.current = setTimeout(() => setMsg(null), 2500);
   };
 
   const run = async (fn, okMsg, errMsg) => {

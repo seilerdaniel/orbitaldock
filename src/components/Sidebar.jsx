@@ -1,6 +1,7 @@
 import React from 'react';
 import { CalendarDays, LayoutGrid, Orbit, Plus, Settings, Wallet } from 'lucide-react';
 import { cn } from '../lib/cn';
+import { APP_VERSION } from '../lib/version';
 
 const NAV = [
   { id: 'agenda', label: 'Agenda Hoy', icon: CalendarDays },
@@ -57,7 +58,7 @@ export default function Sidebar({ view, onViewChange, onNew }) {
 
       {/* Footer */}
       <div className="border-t border-slate-800 px-5 py-4">
-        <p className="text-xs text-slate-600">v0.4.0</p>
+        <p className="text-xs text-slate-600">v{APP_VERSION}</p>
         <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-slate-500">
           <kbd className="rounded border border-slate-700 bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-300">
             Ctrl K

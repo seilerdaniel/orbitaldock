@@ -43,7 +43,6 @@ export default function ProjectCard({ project, health, onCheck, onEdit, onDelete
     return () => {
       alive = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.id, project.rutaLocal]);
 
   return (

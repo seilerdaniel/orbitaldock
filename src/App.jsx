@@ -3,7 +3,7 @@ import { AlertTriangle, Search } from 'lucide-react';
 import { api, linkProbe } from './lib/api';
 import { normalizeProject, normalizeProjectList } from './lib/normalize';
 import { formatFecha, todayName, localDateKey } from './lib/status';
-import { cn } from './lib/cn';
+import { APP_VERSION } from './lib/version';
 import Sidebar from './components/Sidebar';
 import DashboardAgenda from './components/DashboardAgenda';
 import ProjectGrid from './components/ProjectGrid';
@@ -58,10 +58,9 @@ export default function App() {
     const hoy = todayName();
     const count = projects.filter((p) => p.diasAsignados.includes(hoy)).length;
     api.showNotification({
-      title: '🚀 OrbitalDock v0.4.0',
+      title: `🚀 OrbitalDock v${APP_VERSION}`,
       body: `Tienes ${count} ${count === 1 ? 'proyecto' : 'proyectos'} programados para hoy`
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects]);
 
   useEffect(() => {
@@ -232,7 +231,7 @@ export default function App() {
               {formatFecha()} · Hoy: {todayName()}
             </span>
             <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-500 ring-1 ring-inset ring-slate-700/50">
-              v0.4.0
+              v{APP_VERSION}
             </span>
           </div>
           <div className="flex items-center gap-3">

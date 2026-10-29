@@ -26,7 +26,7 @@ const money = (value) => {
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const dateStr = (value) => (typeof value === 'string' && DATE_RE.test(value.trim()) ? value.trim() : '');
 
-const newId = () => {
+export const createId = () => {
   try {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
   } catch {
@@ -68,9 +68,11 @@ function normalizeDias(value) {
 function normalizeTandas(value) {
   if (!Array.isArray(value)) return [];
   return value.filter(isObject).map((tanda) => ({
+    id: str(tanda.id).trim() || createId(),
     tanda: str(tanda.tanda).trim() || 'Sin nombre',
     tareas: Array.isArray(tanda.tareas)
       ? tanda.tareas.filter(isObject).map((tarea) => ({
+          id: str(tarea.id).trim() || createId(),
           texto: str(tarea.texto).trim(),
           completado: tarea.completado === true
         }))
@@ -81,6 +83,7 @@ function normalizeTandas(value) {
 function normalizeCostos(value) {
   if (!Array.isArray(value)) return [];
   return value.filter(isObject).map((costo) => ({
+    id: str(costo.id).trim() || createId(),
     concepto: str(costo.concepto).trim(),
     monto: money(costo.monto),
     moneda: costo.moneda === 'ARS' ? 'ARS' : 'USD'
@@ -105,7 +108,7 @@ export function normalizeProject(value) {
   const raw = isObject(value) ? value : {};
   return {
     ...raw,
-    id: str(raw.id).trim() || newId(),
+    id: str(raw.id).trim() || createId(),
     nombre: str(raw.nombre).trim() || 'Proyecto sin nombre',
     tipo: TIPOS.includes(raw.tipo) ? raw.tipo : 'Web',
     categoria: CATEGORIAS.includes(raw.categoria) ? raw.categoria : 'SaaS Propio',

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Check, Copy, Download, Plus, Upload } from 'lucide-react';
 import { copyText } from '../lib/opencodePrompt';
 import EmptyState from './ui/EmptyState';
@@ -6,7 +6,10 @@ import EmptyState from './ui/EmptyState';
 /** Vista Configuración: gestión de proyectos + copias de seguridad. */
 export default function Configuracion({ projects, onNew, onEdit, onExport, onImport }) {
   const fileRef = useRef(null);
+  const copiedTimer = useRef(null);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => () => clearTimeout(copiedTimer.current), []);
 
   const handleCopyBackup = async () => {
     const payload = {
@@ -17,8 +20,9 @@ export default function Configuracion({ projects, onNew, onEdit, onExport, onImp
     };
     const ok = await copyText(JSON.stringify(payload, null, 2));
     if (ok) {
+      clearTimeout(copiedTimer.current);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      copiedTimer.current = setTimeout(() => setCopied(false), 2500);
     } else {
       alert('No se pudo copiar el backup al portapapeles.');
     }
@@ -116,7 +120,7 @@ export default function Configuracion({ projects, onNew, onEdit, onExport, onImp
       <p className="max-w-xl text-xs leading-relaxed text-slate-600">
         Los datos se guardan automáticamente en <span className="font-mono text-slate-500">config.json</span> dentro
         del directorio de datos de la aplicación (<span className="font-mono text-slate-500">userData</span>). Usá
-        Exportar/Importar para mover tu base entre máquinas, o "Copiar Backup JSON" para enviarla rápido a la app
+        Exportar/Importar para mover tu base entre máquinas, o «Copiar Backup JSON» para enviarla rápido a la app
         móvil por WhatsApp, Telegram o Notas.
       </p>
     </div>
